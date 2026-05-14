@@ -278,21 +278,67 @@ async function exportResults({ assignments, waitlist, eligible, registered, actu
     const pageH = pdf.internal.pageSize.getHeight();
     const margin = 15;
     const imgW = pageW - margin * 2;
-    const imgH = (canvas.height * imgW) / canvas.width;
-    const imgData = canvas.toDataURL("image/jpeg", 0.95);
+    const pxPerMm = canvas.width / imgW;
+    const pageContentHpx = (pageH - margin * 2) * pxPerMm;
 
-    const contentH = pageH - margin * 2;
-    let position = margin;
-    let heightLeft = imgH;
+    // 智慧斷頁:掃描 canvas 像素列,在「整列幾乎全白」處切頁,避免切到表格列中間
+    const ctx = canvas.getContext("2d");
+    const pixelData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    const W = canvas.width;
 
-    pdf.addImage(imgData, "JPEG", margin, position, imgW, imgH);
-    heightLeft -= contentH;
+    const isWhitespaceRow = (y) => {
+      let nonWhite = 0;
+      const limit = Math.floor(W / 4 * 0.05); // 容忍 5% 非白像素(細邊框)
+      for (let x = 0; x < W; x += 4) {
+        const i = (y * W + x) * 4;
+        if (pixelData[i] < 245 || pixelData[i + 1] < 245 || pixelData[i + 2] < 245) {
+          nonWhite++;
+          if (nonWhite > limit) return false;
+        }
+      }
+      return true;
+    };
 
-    while (heightLeft > 0) {
-      position -= contentH;
-      pdf.addPage();
-      pdf.addImage(imgData, "JPEG", margin, position, imgW, imgH);
-      heightLeft -= contentH;
+    const findBreakAbove = (target, minY) => {
+      for (let y = Math.min(target, canvas.height - 1); y >= minY; y--) {
+        if (isWhitespaceRow(y)) return y;
+      }
+      return target; // fallback:硬切
+    };
+
+    const breakpoints = [0];
+    let cur = 0;
+    while (cur + pageContentHpx < canvas.height) {
+      const target = Math.min(cur + pageContentHpx, canvas.height);
+      const minSearch = cur + Math.floor(pageContentHpx * 0.6);
+      const bp = findBreakAbove(target, minSearch);
+      if (bp <= cur) break;
+      breakpoints.push(bp);
+      cur = bp;
+    }
+    if (breakpoints[breakpoints.length - 1] < canvas.height) {
+      breakpoints.push(canvas.height);
+    }
+
+    // 每段切出一個子 canvas,放到對應頁面
+    for (let i = 0; i < breakpoints.length - 1; i++) {
+      const top = breakpoints[i];
+      const bot = breakpoints[i + 1];
+      const segH = bot - top;
+
+      const segCanvas = document.createElement("canvas");
+      segCanvas.width = canvas.width;
+      segCanvas.height = segH;
+      const segCtx = segCanvas.getContext("2d");
+      segCtx.fillStyle = "#FFFFFF";
+      segCtx.fillRect(0, 0, canvas.width, segH);
+      segCtx.drawImage(canvas, 0, -top);
+
+      const segDataUrl = segCanvas.toDataURL("image/jpeg", 0.95);
+      const segHmm = segH / pxPerMm;
+
+      if (i > 0) pdf.addPage();
+      pdf.addImage(segDataUrl, "JPEG", margin, margin, imgW, segHmm);
     }
 
     pdf.save(filename);
