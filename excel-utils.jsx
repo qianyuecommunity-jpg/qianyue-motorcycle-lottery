@@ -171,8 +171,8 @@ function escHtml(s) {
   return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-// Export results as PDF (uses html2pdf.js -> html2canvas + jsPDF)
-function exportResults({ assignments, waitlist, eligible, registered, actual, spots, unassignedSpots, seed }) {
+// Export results as PDF — 直接 orchestrate html2canvas + jsPDF,容器在頁面上短暫可見
+async function exportResults({ assignments, waitlist, eligible, registered, actual, spots, unassignedSpots, seed }) {
   const timestamp = new Date().toLocaleString("zh-TW");
   const ts = new Date().toISOString().slice(0, 16).replace(/[-:T]/g, "");
   const filename = `機車位抽籤_結果_${ts}.pdf`;
@@ -188,13 +188,7 @@ function exportResults({ assignments, waitlist, eligible, registered, actual, sp
       : wonRank.has(h)
       ? `候補 ${wonRank.get(h)}`
       : "";
-    return `<tr>
-      <td>${escHtml(h)}</td>
-      <td class="c">${registered.includes(h) ? "✓" : ""}</td>
-      <td class="c">${actual.includes(h) ? "✓" : ""}</td>
-      <td class="c">${eligibleSet.has(h) ? "✓" : ""}</td>
-      <td>${got}</td>
-    </tr>`;
+    return `<tr><td>${escHtml(h)}</td><td class="c">${registered.includes(h) ? "✓" : ""}</td><td class="c">${actual.includes(h) ? "✓" : ""}</td><td class="c">${eligibleSet.has(h) ? "✓" : ""}</td><td>${got}</td></tr>`;
   }).join("");
 
   const assignmentRows = assignments.map((a, i) =>
@@ -203,41 +197,17 @@ function exportResults({ assignments, waitlist, eligible, registered, actual, sp
 
   const unassignedBlock = (unassignedSpots && unassignedSpots.length) ? `
     <h3>未配對車格(合格戶數不足)</h3>
-    <table>
-      <thead><tr><th>機車格號</th><th>狀態</th></tr></thead>
-      <tbody>
-        ${unassignedSpots.map((s) => `<tr><td>${escHtml(s)}</td><td class="muted">無人認領</td></tr>`).join("")}
-      </tbody>
-    </table>
+    <table><thead><tr><th>機車格號</th><th>狀態</th></tr></thead><tbody>${unassignedSpots.map((s) => `<tr><td>${escHtml(s)}</td><td class="muted">無人認領</td></tr>`).join("")}</tbody></table>
   ` : "";
 
   const waitlistBlock = (waitlist && waitlist.length) ? `
     <h3>候補名單(車格不足,依抽籤順位)</h3>
-    <table>
-      <thead><tr><th>順位</th><th>候補編號</th><th>戶別</th><th>抽籤時間</th></tr></thead>
-      <tbody>
-        ${waitlist.map((w) => `<tr><td>${w.rank}</td><td>候補 ${w.rank}</td><td>${escHtml(w.household)}</td><td>${escHtml(w.time || "")}</td></tr>`).join("")}
-      </tbody>
-    </table>
+    <table><thead><tr><th>順位</th><th>候補編號</th><th>戶別</th><th>抽籤時間</th></tr></thead><tbody>${waitlist.map((w) => `<tr><td>${w.rank}</td><td>候補 ${w.rank}</td><td>${escHtml(w.household)}</td><td>${escHtml(w.time || "")}</td></tr>`).join("")}</tbody></table>
   ` : "";
 
   const container = document.createElement("div");
   container.className = "pdf-report";
   container.innerHTML = `
-    <style>
-      .pdf-report { font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif; color: #1B2421; background: #fff; padding: 0; }
-      .pdf-report h1 { font-size: 22px; margin: 0 0 6px; font-weight: 700; }
-      .pdf-report h2 { font-size: 15px; margin: 22px 0 10px; border-bottom: 1.5px solid #1B2421; padding-bottom: 4px; font-weight: 700; }
-      .pdf-report h3 { font-size: 12px; margin: 16px 0 6px; font-weight: 600; color: #3F4744; }
-      .pdf-report .meta { font-size: 11px; color: #555; margin-bottom: 14px; font-family: "JetBrains Mono", monospace; }
-      .pdf-report table { width: 100%; border-collapse: collapse; font-size: 10.5px; page-break-inside: auto; }
-      .pdf-report th, .pdf-report td { border: 0.5px solid #999; padding: 4px 7px; text-align: left; vertical-align: top; }
-      .pdf-report thead th { background: #EEE8DA; font-weight: 600; }
-      .pdf-report td.c, .pdf-report th.c { text-align: center; }
-      .pdf-report td.muted { color: #888; font-style: italic; }
-      .pdf-report tr { page-break-inside: avoid; }
-      .pdf-report .footer { margin-top: 24px; font-size: 9.5px; color: #837C6E; border-top: 1px solid #ddd; padding-top: 8px; }
-    </style>
     <h1>機車位抽籤結果</h1>
     <div class="meta">SEED · ${escHtml(seed)} &nbsp; · &nbsp; 抽籤時間:${escHtml(timestamp)}</div>
 
@@ -272,22 +242,66 @@ function exportResults({ assignments, waitlist, eligible, registered, actual, sp
 
     <div class="footer">本檔由瀏覽器端開源程式生成;以同一 SEED 與輸入名單,任何人皆可離線復現此結果。</div>
   `;
+
+  // 短暫可見於畫面左上角(白底浮層),確保 html2canvas 能正確抓到 layout
   container.style.position = "fixed";
-  container.style.left = "-10000px";
   container.style.top = "0";
-  container.style.width = "180mm";
+  container.style.left = "0";
+  container.style.width = "780px";
+  container.style.background = "#FFFFFF";
+  container.style.zIndex = "99999";
+  container.style.padding = "20px";
+  container.style.boxShadow = "0 4px 24px rgba(0,0,0,.3)";
+  container.style.border = "1px solid #ccc";
   document.body.appendChild(container);
 
-  return window.html2pdf().set({
-    margin: [15, 15, 15, 15],
-    filename,
-    image: { type: "jpeg", quality: 0.95 },
-    html2canvas: { scale: 2, useCORS: true, backgroundColor: "#FFFFFF" },
-    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-    pagebreak: { mode: ["css", "legacy"], avoid: "tr" },
-  }).from(container).save().finally(() => {
-    document.body.removeChild(container);
-  });
+  try {
+    // 等 layout / 字型就緒
+    await new Promise((r) => setTimeout(r, 100));
+
+    const canvas = await window.html2canvas(container, {
+      scale: 2,
+      backgroundColor: "#FFFFFF",
+      useCORS: true,
+      logging: false,
+    });
+
+    if (!canvas || !canvas.width || !canvas.height) {
+      throw new Error(`html2canvas 抓到空白:${canvas && canvas.width}x${canvas && canvas.height}`);
+    }
+
+    const JsPDFClass = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+    if (!JsPDFClass) throw new Error("jsPDF 未載入");
+
+    const pdf = new JsPDFClass({ unit: "mm", format: "a4", orientation: "portrait" });
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const margin = 15;
+    const imgW = pageW - margin * 2;
+    const imgH = (canvas.height * imgW) / canvas.width;
+    const imgData = canvas.toDataURL("image/jpeg", 0.95);
+
+    const contentH = pageH - margin * 2;
+    let position = margin;
+    let heightLeft = imgH;
+
+    pdf.addImage(imgData, "JPEG", margin, position, imgW, imgH);
+    heightLeft -= contentH;
+
+    while (heightLeft > 0) {
+      position -= contentH;
+      pdf.addPage();
+      pdf.addImage(imgData, "JPEG", margin, position, imgW, imgH);
+      heightLeft -= contentH;
+    }
+
+    pdf.save(filename);
+  } catch (err) {
+    console.error("PDF 匯出失敗:", err);
+    throw err;
+  } finally {
+    if (container.parentNode) document.body.removeChild(container);
+  }
 }
 
 // Seeded RNG (mulberry32) for reproducible shuffles

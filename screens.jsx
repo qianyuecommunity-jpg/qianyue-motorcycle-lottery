@@ -30,7 +30,6 @@ const STEPS = [
   { id: "welcome", n: "01", lbl: "匯入資料" },
   { id: "preview", n: "02", lbl: "確認名單" },
   { id: "drawing", n: "03", lbl: "進行抽籤" },
-  { id: "results", n: "04", lbl: "匯出結果" },
 ];
 
 function Steps({ current }) {
@@ -120,7 +119,7 @@ function WelcomeScreen({ onImport, error }) {
           <li><div><b>填入資料</b><span>把車格號、登記戶、實到戶填好。</span></div></li>
           <li><div><b>匯入確認</b><span>系統算出合格交集,呈現預覽。</span></div></li>
           <li><div><b>進行抽籤</b><span>逐格動畫抽出,過程透明。</span></div></li>
-          <li><div><b>匯出結果</b><span>下載 Excel,含對照與摘要。</span></div></li>
+          <li><div><b>匯出 PDF</b><span>抽完一鍵下載,含對照、摘要、SEED。</span></div></li>
         </ol>
       </aside>
     </div>

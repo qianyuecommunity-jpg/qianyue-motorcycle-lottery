@@ -2,14 +2,13 @@
 const { useState: useStateA } = React;
 
 function App() {
-  const [screen, setScreen] = useStateA("welcome"); // welcome | preview | drawing | results
+  const [screen, setScreen] = useStateA("welcome"); // welcome | preview | drawing
   const [data, setData] = useStateA(null);
   const [fileName, setFileName] = useStateA("");
   const [error, setError] = useStateA(null);
   const [warnings, setWarnings] = useStateA([]);
   const [eligible, setEligible] = useStateA([]);
   const [seed, setSeed] = useStateA(0);
-  const [plan, setPlan] = useStateA(null);
 
   // ── Demo data loader (for testing without uploading a file)
   const loadDemoData = () => {
@@ -43,19 +42,6 @@ function App() {
     setEligible(eligibleList);
     // Generate a fresh seed each time
     setSeed(Math.floor(Math.random() * 1_000_000));
-    setPlan(null);
-    setScreen("drawing");
-  };
-
-  const handleDrawingDone = (planResult) => {
-    setPlan(planResult);
-    setScreen("results");
-  };
-
-  const handleRedraw = () => {
-    // re-roll seed and go back to drawing
-    setSeed(Math.floor(Math.random() * 1_000_000));
-    setPlan(null);
     setScreen("drawing");
   };
 
@@ -65,7 +51,6 @@ function App() {
     setError(null);
     setWarnings([]);
     setEligible([]);
-    setPlan(null);
     setScreen("welcome");
   };
 
@@ -100,23 +85,11 @@ function App() {
 
       {screen === "drawing" && data && (
         <DrawingScreen
-          spots={data.spots}
-          eligible={eligible}
-          seed={seed}
-          autoPlay={true}
-          onDone={handleDrawingDone}
-          onBack={() => setScreen("preview")}
-        />
-      )}
-
-      {screen === "results" && plan && (
-        <ResultsScreen
-          plan={plan}
           data={data}
           eligible={eligible}
           seed={seed}
-          onRestart={handleRestart}
-          onBack={handleRedraw}
+          autoPlay={true}
+          onBack={() => setScreen("preview")}
         />
       )}
     </div>

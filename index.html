@@ -307,6 +307,22 @@
   }
   .tabs button.active{ background: var(--paper); color: var(--ink); font-weight: 600; }
 
+  /* ─── PDF report (off-screen container used by exportResults) ─── */
+  .pdf-report{
+    font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    color: #1B2421; background: #fff; padding: 0;
+  }
+  .pdf-report h1{ font-size: 22px; margin: 0 0 6px; font-weight: 700; }
+  .pdf-report h2{ font-size: 15px; margin: 22px 0 10px; border-bottom: 1.5px solid #1B2421; padding-bottom: 4px; font-weight: 700; }
+  .pdf-report h3{ font-size: 12px; margin: 16px 0 6px; font-weight: 600; color: #3F4744; }
+  .pdf-report .meta{ font-size: 11px; color: #555; margin-bottom: 14px; font-family: "JetBrains Mono", monospace; }
+  .pdf-report table{ width: 100%; border-collapse: collapse; font-size: 10.5px; }
+  .pdf-report th, .pdf-report td{ border: 0.5px solid #999; padding: 4px 7px; text-align: left; vertical-align: top; }
+  .pdf-report thead th{ background: #EEE8DA; font-weight: 600; }
+  .pdf-report td.c, .pdf-report th.c{ text-align: center; }
+  .pdf-report td.muted{ color: #888; font-style: italic; }
+  .pdf-report .footer{ margin-top: 24px; font-size: 9.5px; color: #837C6E; border-top: 1px solid #ddd; padding-top: 8px; }
+
   /* ─── Toast / error ─── */
   .alert{
     background: var(--accent-soft); border-left: 3px solid var(--accent);
@@ -346,8 +362,9 @@
 
 <!-- SheetJS for xlsx (匯入名單) -->
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
-<!-- html2pdf for export (匯出結果) -->
-<script src="https://unpkg.com/html2pdf.js@0.10.2/dist/html2pdf.bundle.min.js"></script>
+<!-- jsPDF + html2canvas(匯出 PDF,直接 orchestration,跳過 html2pdf wrapper) -->
+<script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 </head>
 <body>
 <div id="root"></div>
@@ -526,8 +543,8 @@ function escHtml(s) {
   return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-// Export results as PDF (uses html2pdf.js -> html2canvas + jsPDF)
-function exportResults({ assignments, waitlist, eligible, registered, actual, spots, unassignedSpots, seed }) {
+// Export results as PDF — 直接 orchestrate html2canvas + jsPDF,容器在頁面上短暫可見
+async function exportResults({ assignments, waitlist, eligible, registered, actual, spots, unassignedSpots, seed }) {
   const timestamp = new Date().toLocaleString("zh-TW");
   const ts = new Date().toISOString().slice(0, 16).replace(/[-:T]/g, "");
   const filename = `機車位抽籤_結果_${ts}.pdf`;
@@ -543,13 +560,7 @@ function exportResults({ assignments, waitlist, eligible, registered, actual, sp
       : wonRank.has(h)
       ? `候補 ${wonRank.get(h)}`
       : "";
-    return `<tr>
-      <td>${escHtml(h)}</td>
-      <td class="c">${registered.includes(h) ? "✓" : ""}</td>
-      <td class="c">${actual.includes(h) ? "✓" : ""}</td>
-      <td class="c">${eligibleSet.has(h) ? "✓" : ""}</td>
-      <td>${got}</td>
-    </tr>`;
+    return `<tr><td>${escHtml(h)}</td><td class="c">${registered.includes(h) ? "✓" : ""}</td><td class="c">${actual.includes(h) ? "✓" : ""}</td><td class="c">${eligibleSet.has(h) ? "✓" : ""}</td><td>${got}</td></tr>`;
   }).join("");
 
   const assignmentRows = assignments.map((a, i) =>
@@ -558,41 +569,17 @@ function exportResults({ assignments, waitlist, eligible, registered, actual, sp
 
   const unassignedBlock = (unassignedSpots && unassignedSpots.length) ? `
     <h3>未配對車格(合格戶數不足)</h3>
-    <table>
-      <thead><tr><th>機車格號</th><th>狀態</th></tr></thead>
-      <tbody>
-        ${unassignedSpots.map((s) => `<tr><td>${escHtml(s)}</td><td class="muted">無人認領</td></tr>`).join("")}
-      </tbody>
-    </table>
+    <table><thead><tr><th>機車格號</th><th>狀態</th></tr></thead><tbody>${unassignedSpots.map((s) => `<tr><td>${escHtml(s)}</td><td class="muted">無人認領</td></tr>`).join("")}</tbody></table>
   ` : "";
 
   const waitlistBlock = (waitlist && waitlist.length) ? `
     <h3>候補名單(車格不足,依抽籤順位)</h3>
-    <table>
-      <thead><tr><th>順位</th><th>候補編號</th><th>戶別</th><th>抽籤時間</th></tr></thead>
-      <tbody>
-        ${waitlist.map((w) => `<tr><td>${w.rank}</td><td>候補 ${w.rank}</td><td>${escHtml(w.household)}</td><td>${escHtml(w.time || "")}</td></tr>`).join("")}
-      </tbody>
-    </table>
+    <table><thead><tr><th>順位</th><th>候補編號</th><th>戶別</th><th>抽籤時間</th></tr></thead><tbody>${waitlist.map((w) => `<tr><td>${w.rank}</td><td>候補 ${w.rank}</td><td>${escHtml(w.household)}</td><td>${escHtml(w.time || "")}</td></tr>`).join("")}</tbody></table>
   ` : "";
 
   const container = document.createElement("div");
   container.className = "pdf-report";
   container.innerHTML = `
-    <style>
-      .pdf-report { font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif; color: #1B2421; background: #fff; padding: 0; }
-      .pdf-report h1 { font-size: 22px; margin: 0 0 6px; font-weight: 700; }
-      .pdf-report h2 { font-size: 15px; margin: 22px 0 10px; border-bottom: 1.5px solid #1B2421; padding-bottom: 4px; font-weight: 700; }
-      .pdf-report h3 { font-size: 12px; margin: 16px 0 6px; font-weight: 600; color: #3F4744; }
-      .pdf-report .meta { font-size: 11px; color: #555; margin-bottom: 14px; font-family: "JetBrains Mono", monospace; }
-      .pdf-report table { width: 100%; border-collapse: collapse; font-size: 10.5px; page-break-inside: auto; }
-      .pdf-report th, .pdf-report td { border: 0.5px solid #999; padding: 4px 7px; text-align: left; vertical-align: top; }
-      .pdf-report thead th { background: #EEE8DA; font-weight: 600; }
-      .pdf-report td.c, .pdf-report th.c { text-align: center; }
-      .pdf-report td.muted { color: #888; font-style: italic; }
-      .pdf-report tr { page-break-inside: avoid; }
-      .pdf-report .footer { margin-top: 24px; font-size: 9.5px; color: #837C6E; border-top: 1px solid #ddd; padding-top: 8px; }
-    </style>
     <h1>機車位抽籤結果</h1>
     <div class="meta">SEED · ${escHtml(seed)} &nbsp; · &nbsp; 抽籤時間:${escHtml(timestamp)}</div>
 
@@ -627,22 +614,66 @@ function exportResults({ assignments, waitlist, eligible, registered, actual, sp
 
     <div class="footer">本檔由瀏覽器端開源程式生成;以同一 SEED 與輸入名單,任何人皆可離線復現此結果。</div>
   `;
+
+  // 短暫可見於畫面左上角(白底浮層),確保 html2canvas 能正確抓到 layout
   container.style.position = "fixed";
-  container.style.left = "-10000px";
   container.style.top = "0";
-  container.style.width = "180mm";
+  container.style.left = "0";
+  container.style.width = "780px";
+  container.style.background = "#FFFFFF";
+  container.style.zIndex = "99999";
+  container.style.padding = "20px";
+  container.style.boxShadow = "0 4px 24px rgba(0,0,0,.3)";
+  container.style.border = "1px solid #ccc";
   document.body.appendChild(container);
 
-  return window.html2pdf().set({
-    margin: [15, 15, 15, 15],
-    filename,
-    image: { type: "jpeg", quality: 0.95 },
-    html2canvas: { scale: 2, useCORS: true, backgroundColor: "#FFFFFF" },
-    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-    pagebreak: { mode: ["css", "legacy"], avoid: "tr" },
-  }).from(container).save().finally(() => {
-    document.body.removeChild(container);
-  });
+  try {
+    // 等 layout / 字型就緒
+    await new Promise((r) => setTimeout(r, 100));
+
+    const canvas = await window.html2canvas(container, {
+      scale: 2,
+      backgroundColor: "#FFFFFF",
+      useCORS: true,
+      logging: false,
+    });
+
+    if (!canvas || !canvas.width || !canvas.height) {
+      throw new Error(`html2canvas 抓到空白:${canvas && canvas.width}x${canvas && canvas.height}`);
+    }
+
+    const JsPDFClass = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+    if (!JsPDFClass) throw new Error("jsPDF 未載入");
+
+    const pdf = new JsPDFClass({ unit: "mm", format: "a4", orientation: "portrait" });
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const margin = 15;
+    const imgW = pageW - margin * 2;
+    const imgH = (canvas.height * imgW) / canvas.width;
+    const imgData = canvas.toDataURL("image/jpeg", 0.95);
+
+    const contentH = pageH - margin * 2;
+    let position = margin;
+    let heightLeft = imgH;
+
+    pdf.addImage(imgData, "JPEG", margin, position, imgW, imgH);
+    heightLeft -= contentH;
+
+    while (heightLeft > 0) {
+      position -= contentH;
+      pdf.addPage();
+      pdf.addImage(imgData, "JPEG", margin, position, imgW, imgH);
+      heightLeft -= contentH;
+    }
+
+    pdf.save(filename);
+  } catch (err) {
+    console.error("PDF 匯出失敗:", err);
+    throw err;
+  } finally {
+    if (container.parentNode) document.body.removeChild(container);
+  }
 }
 
 // Seeded RNG (mulberry32) for reproducible shuffles
@@ -709,7 +740,6 @@ const STEPS = [
   { id: "welcome", n: "01", lbl: "匯入資料" },
   { id: "preview", n: "02", lbl: "確認名單" },
   { id: "drawing", n: "03", lbl: "進行抽籤" },
-  { id: "results", n: "04", lbl: "匯出結果" },
 ];
 
 function Steps({ current }) {
@@ -799,7 +829,7 @@ function WelcomeScreen({ onImport, error }) {
           <li><div><b>填入資料</b><span>把車格號、登記戶、實到戶填好。</span></div></li>
           <li><div><b>匯入確認</b><span>系統算出合格交集,呈現預覽。</span></div></li>
           <li><div><b>進行抽籤</b><span>逐格動畫抽出,過程透明。</span></div></li>
-          <li><div><b>匯出結果</b><span>下載 Excel,含對照與摘要。</span></div></li>
+          <li><div><b>匯出 PDF</b><span>抽完一鍵下載,含對照、摘要、SEED。</span></div></li>
         </ol>
       </aside>
     </div>
@@ -958,17 +988,13 @@ window.WelcomeScreen = WelcomeScreen;
 window.PreviewScreen = PreviewScreen;
 </script>
 <script type="text/babel" data-presets="env,react">
-// drawing.jsx — Drawing animation + Results screens
+// drawing.jsx — Drawing animation + 結束時直接匯出 PDF
 const { useState: useStateD, useEffect: useEffectD, useRef: useRefD, useMemo: useMemoD, useCallback: useCallbackD } = React;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Drawing animation
-// ─────────────────────────────────────────────────────────────────────────────
-function DrawingScreen({ spots, eligible, seed, autoPlay, onDone, onBack }) {
-  // Pre-compute the full pick list (we already know who gets what — animation is theater)
+function DrawingScreen({ data, eligible, seed, autoPlay, onBack }) {
   const plan = useMemoD(() => {
     const shuffledHouseholds = window.shuffleWithSeed(eligible, seed);
-    const shuffledSpots = spots.slice(); // spots in given order
+    const shuffledSpots = data.spots.slice();
     const pairs = [];
     const waitlist = [];
     const n = Math.min(shuffledSpots.length, shuffledHouseholds.length);
@@ -981,14 +1007,14 @@ function DrawingScreen({ spots, eligible, seed, autoPlay, onDone, onBack }) {
     const picks = [...pairs, ...waitlist];
     const unassignedSpots = shuffledSpots.slice(n);
     return { picks, pairs, waitlist, unassignedSpots };
-  }, [spots, eligible, seed]);
+  }, [data, eligible, seed]);
 
-  const [index, setIndex] = useStateD(0); // 0 .. plan.picks.length
+  const [index, setIndex] = useStateD(0);
   const [running, setRunning] = useStateD(autoPlay);
   const [reelOffset, setReelOffset] = useStateD(0);
   const [settled, setSettled] = useStateD(false);
-  const [reelItems, setReelItems] = useStateD([]); // names that scroll past
-  const tickAudioRef = useRefD(null);
+  const [reelItems, setReelItems] = useStateD([]);
+  const [exporting, setExporting] = useStateD(false);
   const timerRef = useRefD(null);
   const logRef = useRefD(null);
 
@@ -997,7 +1023,6 @@ function DrawingScreen({ spots, eligible, seed, autoPlay, onDone, onBack }) {
   const PAUSE_AFTER = 750;    // ms — 每籤結果停留
 
   const buildReelItems = useCallbackD((finalName) => {
-    // ~16 ticks + final name resting at last position
     const pool = eligible.length ? eligible : ["—"];
     const tickCount = 16;
     const out = [];
@@ -1008,7 +1033,6 @@ function DrawingScreen({ spots, eligible, seed, autoPlay, onDone, onBack }) {
     return out;
   }, [eligible]);
 
-  // Trigger spin for current index
   useEffectD(() => {
     if (!running) return;
     if (index >= plan.picks.length) {
@@ -1021,20 +1045,17 @@ function DrawingScreen({ spots, eligible, seed, autoPlay, onDone, onBack }) {
     setReelOffset(0);
     setSettled(false);
 
-    // Animate offset to last item
-    // Use rAF to apply transition then change offset on next tick
     const targetOffset = -(items.length - 1) * ITEM_H;
     const rafId = requestAnimationFrame(() => {
       requestAnimationFrame(() => setReelOffset(targetOffset));
     });
 
-    const settleTime = SPIN_DURATION;
     timerRef.current = setTimeout(() => {
       setSettled(true);
       setTimeout(() => {
         setIndex((i) => i + 1);
       }, PAUSE_AFTER);
-    }, settleTime);
+    }, SPIN_DURATION);
 
     return () => {
       cancelAnimationFrame(rafId);
@@ -1042,45 +1063,48 @@ function DrawingScreen({ spots, eligible, seed, autoPlay, onDone, onBack }) {
     };
   }, [running, index, plan.picks, buildReelItems]);
 
-  // Auto-finish handler
-  useEffectD(() => {
-    if (index >= plan.picks.length && plan.picks.length > 0) {
-      // ready to wrap; do nothing here, user navigates via button
-    }
-  }, [index, plan.picks.length]);
-
-  // Keep the log scrolled to the latest entry
+  // 自動把 log 捲到最新一筆
   useEffectD(() => {
     if (logRef.current) {
       logRef.current.scrollTop = logRef.current.scrollHeight;
     }
   }, [index, settled]);
 
-  // Only show settled entries in log
   const visibleLog = plan.picks.slice(0, index + (settled ? 1 : 0));
-
   const currentPick = plan.picks[index];
   const remaining = plan.picks.length - index;
   const allDone = index >= plan.picks.length;
 
-  const handleSkipAll = () => {
-    clearTimeout(timerRef.current);
-    setRunning(false);
-    setIndex(plan.picks.length);
-    setSettled(true);
+  const handleExport = async () => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      const timestamp = new Date().toLocaleString("zh-TW");
+      const assignments = plan.pairs.map((p) => ({
+        spot: p.spot,
+        household: p.household,
+        time: timestamp,
+      }));
+      const waitlist = plan.waitlist.map((w) => ({
+        rank: w.rank,
+        household: w.household,
+        time: timestamp,
+      }));
+      await window.exportResults({
+        assignments,
+        waitlist,
+        eligible,
+        registered: data.registered,
+        actual: data.actual,
+        spots: data.spots,
+        unassignedSpots: plan.unassignedSpots,
+        seed,
+      });
+    } finally {
+      setExporting(false);
+    }
   };
 
-  const handleStep = () => {
-    if (running) return;
-    setRunning(true);
-  };
-
-  const handlePause = () => {
-    setRunning(false);
-    clearTimeout(timerRef.current);
-  };
-
-  // Build dynamic transition style
   const reelStyle = {
     transform: `translateY(${reelOffset}px)`,
     transition: reelOffset === 0
@@ -1091,7 +1115,7 @@ function DrawingScreen({ spots, eligible, seed, autoPlay, onDone, onBack }) {
   return (
     <div>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom: 20 }}>
-        <div className="serif" style={{ fontSize: 28 }}>抽籤進行中</div>
+        <div className="serif" style={{ fontSize: 28 }}>{allDone ? "抽籤完成" : "抽籤進行中"}</div>
         <div className="mono" style={{ fontSize: 12, color:"var(--ink-3)" }}>
           SEED · {seed} · TARGET {plan.pairs.length} 車格{plan.waitlist.length > 0 ? ` + ${plan.waitlist.length} 候補` : ""}
         </div>
@@ -1105,7 +1129,7 @@ function DrawingScreen({ spots, eligible, seed, autoPlay, onDone, onBack }) {
               <div>
                 <div className="slot-no" style={{ fontSize: 64, color:"var(--accent)" }}>抽籤完成</div>
                 <div className="mono" style={{ fontSize: 13, color:"var(--ink-2)" }}>
-                  共配對 {plan.pairs.length} 組{plan.waitlist.length > 0 ? ` · 候補 ${plan.waitlist.length} 位` : ""} · 點下方按鈕查看完整結果
+                  共配對 {plan.pairs.length} 組{plan.waitlist.length > 0 ? ` · 候補 ${plan.waitlist.length} 位` : ""}
                 </div>
               </div>
             ) : currentPick ? (
@@ -1137,17 +1161,6 @@ function DrawingScreen({ spots, eligible, seed, autoPlay, onDone, onBack }) {
             <div className="ticker">
               {allDone ? "已完成全部抽籤" : `剩餘 ${remaining} 籤`}
             </div>
-            {!allDone && !running && (
-              <button className="btn accent" onClick={handleStep}>
-                {index === 0 ? "開始抽籤" : "繼續"} <span className="arr">▶</span>
-              </button>
-            )}
-            {!allDone && running && (
-              <button className="btn ghost" onClick={handlePause}>暫停 ❚❚</button>
-            )}
-            {!allDone && (
-              <button className="btn ghost" onClick={handleSkipAll}>跳過動畫 ⇥</button>
-            )}
           </div>
         </div>
 
@@ -1209,8 +1222,8 @@ function DrawingScreen({ spots, eligible, seed, autoPlay, onDone, onBack }) {
         </div>
         <div className="right">
           {allDone && (
-            <button className="btn accent" onClick={() => onDone(plan)}>
-              查看完整結果 <span className="arr">→</span>
+            <button className="btn accent" onClick={handleExport} disabled={exporting}>
+              {exporting ? "正在產生 PDF…" : "匯出 PDF"} <span className="arr">↓</span>
             </button>
           )}
         </div>
@@ -1219,147 +1232,20 @@ function DrawingScreen({ spots, eligible, seed, autoPlay, onDone, onBack }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Results
-// ─────────────────────────────────────────────────────────────────────────────
-function ResultsScreen({ plan, data, eligible, seed, onRestart, onBack }) {
-  const now = useMemoD(() => new Date(), []);
-  const timestamp = now.toLocaleString("zh-TW");
-
-  const assignments = plan.pairs.map((p) => ({
-    spot: p.spot,
-    household: p.household,
-    time: timestamp,
-  }));
-
-  const [exporting, setExporting] = useStateD(false);
-
-  const handleExport = async () => {
-    if (exporting) return;
-    setExporting(true);
-    try {
-      await window.exportResults({
-        assignments,
-        waitlist: plan.waitlist.map((w) => ({ rank: w.rank, household: w.household, time: timestamp })),
-        eligible,
-        registered: data.registered,
-        actual: data.actual,
-        spots: data.spots,
-        unassignedSpots: plan.unassignedSpots,
-        seed,
-      });
-    } finally {
-      setExporting(false);
-    }
-  };
-
-  return (
-    <div>
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom: 18 }}>
-        <div className="serif" style={{ fontSize: 28 }}>抽籤結果</div>
-        <div className="mono" style={{ fontSize: 12, color:"var(--ink-3)" }}>
-          SEED {seed} · {timestamp}
-        </div>
-      </div>
-
-      <div className="stats">
-        <div className="stat accent">
-          <div className="lbl">完成配對</div>
-          <div className="val">{assignments.length}<span className="unit">組</span></div>
-          <div className="sub">已分配車格</div>
-        </div>
-        <div className="stat">
-          <div className="lbl">未配對車格</div>
-          <div className="val">{plan.unassignedSpots.length}<span className="unit">格</span></div>
-          <div className="sub">無人認領</div>
-        </div>
-        <div className="stat">
-          <div className="lbl">候補戶數</div>
-          <div className="val">{plan.waitlist.length}<span className="unit">戶</span></div>
-          <div className="sub">合格但車格不足</div>
-        </div>
-        <div className="stat">
-          <div className="lbl">總合格戶</div>
-          <div className="val">{eligible.length}<span className="unit">戶</span></div>
-          <div className="sub">登記 ∩ 實到</div>
-        </div>
-      </div>
-
-      <div className="panel" style={{ marginBottom: 22 }}>
-        <div className="panel-h">
-          <h3>車格配對清單</h3>
-          <span className="count">共 {assignments.length} 組</span>
-        </div>
-        <div className="results-grid">
-          {assignments.map((a, i) => (
-            <div key={i} className="res-card">
-              <div className="lbl">車格</div>
-              <div className="spot">#{a.spot}</div>
-              <div className="hh">{a.household}</div>
-              <div className="seq">第 {String(i + 1).padStart(2, "0")} 籤</div>
-            </div>
-          ))}
-          {plan.unassignedSpots.map((s, i) => (
-            <div key={`u${i}`} className="res-card empty">
-              <div className="lbl">車格</div>
-              <div className="spot">#{s}</div>
-              <div className="hh">無人認領</div>
-              <div className="seq">未配對</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {plan.waitlist.length > 0 && (
-        <div className="panel" style={{ marginBottom: 22 }}>
-          <div className="panel-h">
-            <h3>候補名單</h3>
-            <span className="count">{plan.waitlist.length} 戶</span>
-          </div>
-          <div className="results-grid">
-            {plan.waitlist.map((w) => (
-              <div key={w.rank} className="res-card">
-                <div className="lbl">候補</div>
-                <div className="spot">#{w.rank}</div>
-                <div className="hh">{w.household}</div>
-                <div className="seq">第 {String(w.rank).padStart(2, "0")} 順位</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="row-actions">
-        <div className="left">
-          <button className="btn ghost" onClick={onBack}>← 重新抽籤(換種子)</button>
-          <button className="btn ghost" onClick={onRestart}>↺ 回到起點</button>
-        </div>
-        <div className="right">
-          <button className="btn accent" onClick={handleExport} disabled={exporting}>
-            {exporting ? "正在產生 PDF…" : "匯出 PDF"} <span className="arr">↓</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 window.DrawingScreen = DrawingScreen;
-window.ResultsScreen = ResultsScreen;
 </script>
 <script type="text/babel" data-presets="env,react">
 // app.jsx — root component, state machine
 const { useState: useStateA } = React;
 
 function App() {
-  const [screen, setScreen] = useStateA("welcome"); // welcome | preview | drawing | results
+  const [screen, setScreen] = useStateA("welcome"); // welcome | preview | drawing
   const [data, setData] = useStateA(null);
   const [fileName, setFileName] = useStateA("");
   const [error, setError] = useStateA(null);
   const [warnings, setWarnings] = useStateA([]);
   const [eligible, setEligible] = useStateA([]);
   const [seed, setSeed] = useStateA(0);
-  const [plan, setPlan] = useStateA(null);
 
   // ── Demo data loader (for testing without uploading a file)
   const loadDemoData = () => {
@@ -1393,19 +1279,6 @@ function App() {
     setEligible(eligibleList);
     // Generate a fresh seed each time
     setSeed(Math.floor(Math.random() * 1_000_000));
-    setPlan(null);
-    setScreen("drawing");
-  };
-
-  const handleDrawingDone = (planResult) => {
-    setPlan(planResult);
-    setScreen("results");
-  };
-
-  const handleRedraw = () => {
-    // re-roll seed and go back to drawing
-    setSeed(Math.floor(Math.random() * 1_000_000));
-    setPlan(null);
     setScreen("drawing");
   };
 
@@ -1415,7 +1288,6 @@ function App() {
     setError(null);
     setWarnings([]);
     setEligible([]);
-    setPlan(null);
     setScreen("welcome");
   };
 
@@ -1450,23 +1322,11 @@ function App() {
 
       {screen === "drawing" && data && (
         <DrawingScreen
-          spots={data.spots}
-          eligible={eligible}
-          seed={seed}
-          autoPlay={true}
-          onDone={handleDrawingDone}
-          onBack={() => setScreen("preview")}
-        />
-      )}
-
-      {screen === "results" && plan && (
-        <ResultsScreen
-          plan={plan}
           data={data}
           eligible={eligible}
           seed={seed}
-          onRestart={handleRestart}
-          onBack={handleRedraw}
+          autoPlay={true}
+          onBack={() => setScreen("preview")}
         />
       )}
     </div>
