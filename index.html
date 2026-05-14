@@ -436,23 +436,50 @@ function parseWorkbook(wb) {
   const registered = [];
   const actual = [];
 
+  // 同欄位內第一次出現的位置 → 用來指出重複時的「已在第 N 列」
+  const seenSpot = new Map();
+  const seenReg = new Map();
+  const seenAct = new Map();
+
   const validationErrors = [];
   for (let r = 1; r < rows.length; r++) {
     const row = rows[r];
+    const rowNum = r + 1; // Excel 列號從 1 起算,標題列為第 1 列
     const s = row[iSpot];
     const reg = row[iReg];
     const act = row[iAct];
-    if (s !== "" && s != null) spots.push(String(s).trim());
+
+    if (s !== "" && s != null) {
+      const v = String(s).trim();
+      if (seenSpot.has(v)) {
+        validationErrors.push({ row: rowNum, col: "機車格號", value: v, reason: `重複(已出現在第 ${seenSpot.get(v)} 列)` });
+      } else {
+        seenSpot.set(v, rowNum);
+      }
+      spots.push(v);
+    }
+
     if (reg !== "" && reg != null) {
       const v = String(reg).trim();
       const err = validateHouseholdFormat(v);
-      if (err) validationErrors.push({ row: r + 1, col: "登記參與戶別", value: v, reason: err });
+      if (err) validationErrors.push({ row: rowNum, col: "登記參與戶別", value: v, reason: err });
+      if (seenReg.has(v)) {
+        validationErrors.push({ row: rowNum, col: "登記參與戶別", value: v, reason: `重複(已出現在第 ${seenReg.get(v)} 列)` });
+      } else {
+        seenReg.set(v, rowNum);
+      }
       registered.push(v);
     }
+
     if (act !== "" && act != null) {
       const v = String(act).trim();
       const err = validateHouseholdFormat(v);
-      if (err) validationErrors.push({ row: r + 1, col: "實際參與戶別", value: v, reason: err });
+      if (err) validationErrors.push({ row: rowNum, col: "實際參與戶別", value: v, reason: err });
+      if (seenAct.has(v)) {
+        validationErrors.push({ row: rowNum, col: "實際參與戶別", value: v, reason: `重複(已出現在第 ${seenAct.get(v)} 列)` });
+      } else {
+        seenAct.set(v, rowNum);
+      }
       actual.push(v);
     }
   }
@@ -466,33 +493,13 @@ function parseWorkbook(wb) {
       ? `\n…還有 ${validationErrors.length - MAX_LIST} 個錯誤未列出`
       : "";
     throw new Error(
-      `戶別格式錯誤 ${validationErrors.length} 處,請修正後重新匯入。\n` +
-      `(正確格式:「戶號-樓層F」;戶號為 218~238 雙數,樓層為 1~13)\n` +
+      `資料檢核錯誤 ${validationErrors.length} 處,請修正後重新匯入。\n` +
+      `(戶別格式:「戶號-樓層F」;戶號 218~238 雙數;樓層 1~13;同一欄位內不可重複)\n` +
       lines.join("\n") + more
     );
   }
 
-  // dedupe + warn
-  const dedupe = (arr, label) => {
-    const seen = new Set();
-    const out = [];
-    for (const v of arr) {
-      if (seen.has(v)) {
-        warnings.push(`${label}有重複值「${v}」,已自動去除。`);
-        continue;
-      }
-      seen.add(v);
-      out.push(v);
-    }
-    return out;
-  };
-
-  return {
-    spots: dedupe(spots, "機車格號"),
-    registered: dedupe(registered, "登記戶別"),
-    actual: dedupe(actual, "實到戶別"),
-    warnings,
-  };
+  return { spots, registered, actual, warnings };
 }
 
 async function readFileAsWorkbook(file) {
@@ -529,7 +536,7 @@ function downloadTemplate() {
     [""],
     ["合格抽籤資格 = 登記參與戶別 ∩ 實際參與戶別(取交集)"],
     [""],
-    ["三個欄位長度可不同。空白列會被忽略,重複值會自動去除。"],
+    ["三個欄位長度可不同。空白列會被忽略,前後空白會自動去除;同一欄位內不可重複,否則匯入時會回報錯誤。"],
   ];
   const ws2 = XLSX.utils.aoa_to_sheet(readme);
   ws2["!cols"] = [{ wch: 18 }, { wch: 70 }];
