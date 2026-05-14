@@ -103,7 +103,6 @@ function App() {
           spots={data.spots}
           eligible={eligible}
           seed={seed}
-          speed={50}
           autoPlay={true}
           onDone={handleDrawingDone}
           onBack={() => setScreen("preview")}

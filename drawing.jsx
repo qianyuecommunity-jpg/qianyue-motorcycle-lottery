@@ -4,7 +4,7 @@ const { useState: useStateD, useEffect: useEffectD, useRef: useRefD, useMemo: us
 // ─────────────────────────────────────────────────────────────────────────────
 // Drawing animation
 // ─────────────────────────────────────────────────────────────────────────────
-function DrawingScreen({ spots, eligible, seed, speed, autoPlay, onDone, onBack }) {
+function DrawingScreen({ spots, eligible, seed, autoPlay, onDone, onBack }) {
   // Pre-compute the full assignment list (we already know who gets what — animation is theater)
   const plan = useMemoD(() => {
     const shuffledHouseholds = window.shuffleWithSeed(eligible, seed);
@@ -28,7 +28,8 @@ function DrawingScreen({ spots, eligible, seed, speed, autoPlay, onDone, onBack 
   const timerRef = useRefD(null);
 
   const ITEM_H = 78;
-  const SPIN_DURATION = Math.max(400, 2400 - speed * 18); // ms; speed 0..100
+  const SPIN_DURATION = 200; // ms — 轉輪動畫
+  const PAUSE_AFTER = 100;   // ms — 每籤結果停留
 
   const buildReelItems = useCallbackD((finalName) => {
     // ~16 ticks + final name resting at last position
@@ -65,18 +66,16 @@ function DrawingScreen({ spots, eligible, seed, speed, autoPlay, onDone, onBack 
     const settleTime = SPIN_DURATION;
     timerRef.current = setTimeout(() => {
       setSettled(true);
-      // pause briefly to let user see result
-      const pause = Math.max(280, 1200 - speed * 9);
       setTimeout(() => {
         setIndex((i) => i + 1);
-      }, pause);
+      }, PAUSE_AFTER);
     }, settleTime);
 
     return () => {
       cancelAnimationFrame(rafId);
       clearTimeout(timerRef.current);
     };
-  }, [running, index, plan.pairs, buildReelItems, SPIN_DURATION, speed]);
+  }, [running, index, plan.pairs, buildReelItems]);
 
   // Auto-finish handler
   useEffectD(() => {
