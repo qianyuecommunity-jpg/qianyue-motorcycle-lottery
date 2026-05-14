@@ -89,7 +89,11 @@ function App() {
           eligible={eligible}
           seed={seed}
           autoPlay={true}
-          onBack={() => setScreen("preview")}
+          onBack={() => {
+            if (window.confirm("確定要從頭開始?目前抽籤紀錄將會清除,需要重新匯入名單。")) {
+              handleRestart();
+            }
+          }}
         />
       )}
     </div>

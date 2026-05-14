@@ -228,7 +228,7 @@ function DrawingScreen({ data, eligible, seed, autoPlay, onBack }) {
 
       <div className="row-actions">
         <div className="left">
-          <button className="btn ghost" onClick={onBack}>← 回到名單</button>
+          <button className="btn ghost" onClick={onBack}>↺ 重新開始</button>
         </div>
         <div className="right">
           {allDone && (

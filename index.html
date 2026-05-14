@@ -1264,7 +1264,7 @@ function DrawingScreen({ data, eligible, seed, autoPlay, onBack }) {
 
       <div className="row-actions">
         <div className="left">
-          <button className="btn ghost" onClick={onBack}>← 回到名單</button>
+          <button className="btn ghost" onClick={onBack}>↺ 重新開始</button>
         </div>
         <div className="right">
           {allDone && (
@@ -1372,7 +1372,11 @@ function App() {
           eligible={eligible}
           seed={seed}
           autoPlay={true}
-          onBack={() => setScreen("preview")}
+          onBack={() => {
+            if (window.confirm("確定要從頭開始?目前抽籤紀錄將會清除,需要重新匯入名單。")) {
+              handleRestart();
+            }
+          }}
         />
       )}
     </div>
