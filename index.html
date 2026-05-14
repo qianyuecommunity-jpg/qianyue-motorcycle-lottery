@@ -990,6 +990,7 @@ function DrawingScreen({ spots, eligible, seed, autoPlay, onDone, onBack }) {
   const [reelItems, setReelItems] = useStateD([]); // names that scroll past
   const tickAudioRef = useRefD(null);
   const timerRef = useRefD(null);
+  const logRef = useRefD(null);
 
   const ITEM_H = 78;
   const SPIN_DURATION = 1500; // ms — 轉輪動畫
@@ -1047,6 +1048,13 @@ function DrawingScreen({ spots, eligible, seed, autoPlay, onDone, onBack }) {
       // ready to wrap; do nothing here, user navigates via button
     }
   }, [index, plan.picks.length]);
+
+  // Keep the log scrolled to the latest entry
+  useEffectD(() => {
+    if (logRef.current) {
+      logRef.current.scrollTop = logRef.current.scrollHeight;
+    }
+  }, [index, settled]);
 
   // Only show settled entries in log
   const visibleLog = plan.picks.slice(0, index + (settled ? 1 : 0));
@@ -1144,7 +1152,7 @@ function DrawingScreen({ spots, eligible, seed, autoPlay, onDone, onBack }) {
         </div>
 
         <div className="draw-log">
-          <div className="draw-log-inner">
+          <div className="draw-log-inner" ref={logRef}>
           {visibleLog.length === 0 ? (
             <div className="empty-note">尚未抽出任何車格…</div>
           ) : (
