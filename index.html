@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>皇翔芊樾 · 機車位公開抽籤</title>
+
+<link rel="icon" type="image/jpeg" href="assets/logo-qianyue.jpg" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;600;700&family=Noto+Sans+TC:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+<style>
+  :root{
+    --brand: #1F5A57;          /* 皇翔芊樾 teal */
+    --brand-dark: #154340;
+    --brand-light: #2E7470;
+    --gold: #B8A468;
+    --gold-dark: #8C7C4A;
+    --bg: #F1ECDF;
+    --bg-2: #E7E0CE;
+    --paper: #FAF6EA;
+    --ink: #1B2421;
+    --ink-2: #3F4744;
+    --ink-3: #837C6E;
+    --rule: #1B2421;
+    --rule-soft: rgba(27,36,33,.18);
+    --accent: var(--brand);
+    --accent-2: var(--gold);
+    --accent-soft: rgba(31,90,87,.10);
+    --good: oklch(0.55 0.10 165);
+    --warn: oklch(0.65 0.14 70);
+  }
+
+  *{ box-sizing: border-box; }
+  html, body { margin:0; padding:0; background: var(--bg); color: var(--ink); }
+  body{
+    font-family: "Noto Sans TC", "PingFang TC", system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  .serif { font-family: "Noto Serif TC", "PingFang TC", serif; font-weight: 600; letter-spacing: -.01em; }
+  .mono  { font-family: "JetBrains Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+  /* ─── Frame ─── */
+  .frame{
+    max-width: 1100px; margin: 0 auto; padding: 32px 40px 80px;
+    min-height: 100vh; position: relative;
+  }
+  .head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding-bottom: 16px; border-bottom: 1px solid var(--rule); margin-bottom: 32px;
+  }
+  .head .brand{ display:flex; align-items:center; gap: 14px; }
+  .head .logo{
+    width: 52px; height: 52px; flex-shrink: 0;
+    background: var(--brand); display:flex; align-items:center; justify-content:center;
+    overflow:hidden;
+  }
+  .head .logo img{ width: 100%; height: 100%; object-fit: cover; display:block; }
+  .head .brand-text{ display:flex; flex-direction:column; gap: 2px; }
+  .head .brand-name{
+    font-family:"Noto Serif TC",serif; font-weight:700; font-size: 18px;
+    letter-spacing:.04em; color: var(--ink); line-height: 1.1;
+  }
+  .head .brand-sub{
+    font-family:"JetBrains Mono",monospace; font-size: 10px; color: var(--gold-dark);
+    letter-spacing:.18em; text-transform: uppercase;
+  }
+  .head .meta{ font-family:"JetBrains Mono", monospace; font-size: 11px; color: var(--ink-2); letter-spacing:.05em; text-transform: uppercase; text-align: right; }
+  .head .meta .meta-l1{ display:block; color: var(--brand); font-weight: 600; }
+
+  /* ─── Step indicator ─── */
+  .steps{ display:flex; gap: 28px; margin-bottom: 36px; font-size:12px; }
+  .steps .step{ color: var(--ink-3); display:flex; gap:10px; align-items:baseline; }
+  .steps .step .n{ font-family:"JetBrains Mono",monospace; font-size:11px; }
+  .steps .step.active{ color: var(--ink); }
+  .steps .step.active .lbl{ font-weight:600; }
+  .steps .step.done{ color: var(--ink-2); }
+  .steps .step.done .n::before{ content:"✓ "; color: var(--brand); }
+  .steps .sep{ color: var(--ink-3); }
+
+  /* ─── Buttons ─── */
+  .btn{
+    appearance: none; border: 1px solid var(--ink); background: var(--ink); color: var(--paper);
+    font-family: "Noto Sans TC", sans-serif; font-size: 14px; font-weight: 500;
+    padding: 12px 22px; cursor: pointer; letter-spacing:.02em;
+    transition: transform .08s ease, background .15s ease, border-color .15s ease;
+    display: inline-flex; align-items: center; gap: 10px;
+  }
+  .btn:hover{ background: var(--brand); border-color: var(--brand); }
+  .btn:active{ transform: translateY(1px); }
+  .btn.ghost{ background: transparent; color: var(--ink); }
+  .btn.ghost:hover{ background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .btn.accent{ background: var(--brand); border-color: var(--brand); color: var(--paper); }
+  .btn.accent:hover{ background: var(--brand-dark); border-color: var(--brand-dark); }
+  .btn.gold{ background: var(--gold); border-color: var(--gold); color: var(--brand-dark); }
+  .btn.gold:hover{ background: var(--gold-dark); border-color: var(--gold-dark); color: var(--paper); }
+  .btn:disabled{ opacity: .35; cursor: not-allowed; }
+  .btn:disabled:hover{ background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .btn .arr{ font-family:"JetBrains Mono",monospace; font-weight:600; }
+
+  /* ─── Welcome ─── */
+  .welcome-hero{
+    display:grid; grid-template-columns: 1fr 380px; gap: 60px;
+    margin-top: 32px; align-items:start;
+  }
+  .welcome-hero .eyebrow{
+    display:flex; align-items:center; gap: 14px; margin-bottom: 22px;
+    font-family:"JetBrains Mono", monospace; font-size: 11px; color: var(--gold-dark);
+    letter-spacing:.22em; text-transform: uppercase;
+  }
+  .welcome-hero .eyebrow::before{
+    content:""; display:inline-block; width: 36px; height: 1px; background: var(--gold);
+  }
+  .welcome-hero h1{
+    font-family: "Noto Serif TC", serif;
+    font-weight: 700; font-size: 68px; line-height: 1.02; letter-spacing:-.02em;
+    margin: 0 0 26px 0; color: var(--ink);
+  }
+  .welcome-hero h1 .accent{ color: var(--brand); }
+  .welcome-hero h1 .gold{ color: var(--gold-dark); }
+  .welcome-hero .sub{ font-size: 17px; color: var(--ink-2); max-width: 540px; line-height: 1.7; margin-bottom: 36px; }
+  .welcome-hero .actions{ display:flex; gap: 14px; flex-wrap:wrap; align-items:center; }
+  .welcome-hero .hint{ font-size: 12px; color: var(--ink-3); margin-top: 18px; font-family:"JetBrains Mono",monospace; letter-spacing:.04em; }
+
+  .info-card{
+    background: var(--brand); border: 1px solid var(--brand);
+    padding: 30px 28px 26px;
+    position: relative; color: var(--paper);
+  }
+  .info-card::before{
+    content: "FLOW / 流程"; position:absolute; top:-9px; left: 18px;
+    background: var(--bg); padding: 0 10px;
+    font-family:"JetBrains Mono",monospace; font-size: 10px; letter-spacing:.14em; color: var(--gold-dark);
+  }
+  .info-card .info-title{
+    font-family:"Noto Serif TC",serif; font-weight:600; font-size: 16px;
+    color: var(--gold); letter-spacing:.05em; margin-bottom: 16px; padding-bottom: 12px;
+    border-bottom: 1px solid rgba(184,164,104,.35);
+  }
+  .info-card ol{ margin:0; padding:0; list-style: none; counter-reset: flow; }
+  .info-card ol li{
+    counter-increment: flow; padding: 11px 0; border-bottom: 1px dashed rgba(250,246,234,.18);
+    display:grid; grid-template-columns: 36px 1fr; gap: 12px;
+  }
+  .info-card ol li:last-child{ border-bottom: none; }
+  .info-card ol li::before{
+    content: counter(flow, decimal-leading-zero);
+    font-family:"JetBrains Mono",monospace; font-size: 12px; color: var(--gold); font-weight: 600;
+  }
+  .info-card ol li b{ font-weight:600; display:block; color: var(--paper); }
+  .info-card ol li span{ font-size: 13px; color: rgba(250,246,234,.7); }
+
+  /* ─── Cards / panels ─── */
+  .panel{
+    background: var(--paper); border: 1px solid var(--rule);
+    padding: 20px 22px; position: relative;
+  }
+  .panel-h{
+    display:flex; align-items:baseline; justify-content: space-between;
+    border-bottom: 1px solid var(--rule); padding-bottom: 10px; margin-bottom: 14px;
+  }
+  .panel-h h3{ margin:0; font-family:"Noto Serif TC",serif; font-weight:600; font-size:18px; }
+  .panel-h .count{ font-family:"JetBrains Mono",monospace; font-size:12px; color: var(--ink-2); }
+
+  .stats{ display:grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  .stat{
+    background: var(--paper); border: 1px solid var(--rule); padding: 20px 22px; position: relative;
+  }
+  .stat .lbl{ font-family:"JetBrains Mono",monospace; font-size: 11px; color: var(--ink-2); letter-spacing:.06em; text-transform: uppercase; margin-bottom: 8px; }
+  .stat .val{ font-family:"Noto Serif TC",serif; font-weight: 700; font-size: 44px; line-height: 1; }
+  .stat .unit{ font-size: 14px; color: var(--ink-2); margin-left: 4px; font-family:"Noto Sans TC",sans-serif; font-weight: 400; }
+  .stat .sub{ font-size: 12px; color: var(--ink-3); margin-top: 8px; }
+  .stat.accent{ background: var(--brand); color: var(--paper); border-color: var(--brand); }
+  .stat.accent .lbl{ color: var(--gold); }
+  .stat.accent .sub{ color: rgba(250,246,234,.65); }
+  .stat.accent .val{ color: var(--paper); }
+  .stat.accent::after{
+    content:""; position:absolute; top:14px; right:14px; width: 24px; height: 24px;
+    border: 1px solid var(--gold); border-radius: 50%;
+  }
+  .stat.accent::before{
+    content:"●"; position:absolute; top:14px; right:14px; width: 24px; height: 24px;
+    color: var(--gold); display:flex; align-items:center; justify-content:center; font-size: 8px;
+  }
+
+  /* list chips */
+  .chip-list{
+    display:flex; flex-wrap: wrap; gap: 6px;
+    max-height: 220px; overflow-y: auto; padding-right: 4px;
+  }
+  .chip{
+    font-family:"JetBrains Mono", monospace; font-size: 12px;
+    padding: 5px 10px; border: 1px solid var(--rule-soft);
+    background: var(--bg); color: var(--ink); border-radius: 2px;
+  }
+  .chip.muted{ color: var(--ink-3); border-style: dashed; background: transparent; text-decoration: line-through; }
+  .chip.eligible{ background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+  .legend{ font-size:11px; color: var(--ink-3); margin-top: 10px; display:flex; gap: 14px; flex-wrap:wrap; }
+  .legend span{ display:flex; align-items:center; gap: 6px; }
+  .legend .sw{ width: 10px; height: 10px; display:inline-block; }
+
+  /* ─── Drawing screen ─── */
+  .draw-wrap{
+    display:grid; grid-template-columns: 1.1fr .9fr; gap: 28px;
+  }
+  .draw-stage{
+    background: var(--paper); border: 1px solid var(--rule);
+    padding: 36px 36px 32px; position: relative; min-height: 460px;
+    display:flex; flex-direction:column; justify-content: space-between;
+  }
+  .draw-stage::before{
+    content: "DRAWING  /  抽籤中"; position:absolute; top:-9px; left: 22px;
+    background: var(--bg); padding: 0 10px;
+    font-family:"JetBrains Mono",monospace; font-size: 10px; letter-spacing:.1em; color: var(--accent);
+  }
+  .draw-now{
+    text-align: center; padding: 30px 0 20px;
+  }
+  .draw-now .lbl{ font-family:"JetBrains Mono",monospace; font-size: 11px; color: var(--ink-2); letter-spacing:.1em; margin-bottom: 18px; }
+  .draw-now .slot-no{
+    font-family: "Noto Serif TC", serif; font-weight: 700; font-size: 96px; line-height: 1;
+    margin-bottom: 14px; letter-spacing:-.02em;
+  }
+  .draw-now .slot-no .pre{ color: var(--ink-3); font-size: 36px; vertical-align: top; margin-right: 6px; font-weight: 500; }
+  .draw-now .arrow{ font-family:"JetBrains Mono",monospace; font-size: 22px; color: var(--ink-3); margin: 6px 0 18px; }
+  .reel{
+    height: 78px; overflow: hidden; position: relative;
+    border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+    margin: 0 auto; max-width: 380px;
+  }
+  .reel-track{
+    display:flex; flex-direction:column;
+    transition: transform .35s cubic-bezier(.22,.61,.36,1);
+  }
+  .reel-track .item{
+    height: 78px; display:flex; align-items:center; justify-content: center;
+    font-family:"JetBrains Mono", monospace; font-size: 34px; font-weight: 600;
+    color: var(--ink);
+  }
+  .reel.settled .reel-track .item{ color: var(--accent); }
+  .reel-fade-t, .reel-fade-b{
+    position:absolute; left:0; right:0; height: 18px; pointer-events:none;
+  }
+  .reel-fade-t{ top:0; background: linear-gradient(to bottom, var(--paper), transparent); }
+  .reel-fade-b{ bottom:0; background: linear-gradient(to top, var(--paper), transparent); }
+
+  .draw-controls{ display:flex; gap: 12px; justify-content: center; align-items: center; padding-top: 10px; border-top: 1px dashed var(--rule-soft); }
+  .draw-controls .ticker{ font-family:"JetBrains Mono",monospace; font-size: 12px; color: var(--ink-2); margin-right: auto; }
+
+  .draw-log{
+    background: var(--paper); border: 1px solid var(--rule);
+    padding: 22px; position: relative;
+  }
+  .draw-log::before{
+    content: "LOG  /  抽出紀錄";
+    position:absolute; top:-9px; left: 18px;
+    background: var(--bg); padding: 0 10px;
+    font-family:"JetBrains Mono",monospace; font-size: 10px; letter-spacing:.1em; color: var(--ink-2);
+    white-space: nowrap;
+  }
+  .draw-log-inner{ max-height: 520px; overflow-y: auto; }
+  .log-row{
+    display:grid; grid-template-columns: 64px 1fr 22px 1fr;
+    gap: 10px; align-items: baseline;
+    padding: 9px 0; border-bottom: 1px dashed var(--rule-soft);
+    font-family:"JetBrains Mono", monospace; font-size: 13px;
+  }
+  .log-row:last-child{ border-bottom: none; }
+  .log-row .no{ color: var(--ink-3); }
+  .log-row .arr{ color: var(--ink-3); text-align: center; }
+  .log-row .spot{ color: var(--ink); }
+  .log-row .hh{ color: var(--accent); font-weight: 600; }
+  .log-row.empty .hh{ color: var(--ink-3); font-style: italic; font-weight: 400; }
+  .log-row.fresh{ animation: pop .5s ease; background: var(--accent-soft); margin: 0 -10px; padding-left: 10px; padding-right: 10px; }
+  @keyframes pop{
+    0%{ background: var(--accent); }
+    100%{ background: transparent; }
+  }
+
+  /* ─── Results ─── */
+  .results-grid{
+    display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+  }
+  .res-card{
+    background: var(--paper); border: 1px solid var(--rule); padding: 16px 18px;
+    display:flex; flex-direction: column; gap: 4px;
+  }
+  .res-card .lbl{ font-family:"JetBrains Mono", monospace; font-size: 11px; color: var(--ink-2); letter-spacing: .06em; text-transform: uppercase; }
+  .res-card .spot{ font-family:"Noto Serif TC", serif; font-weight: 700; font-size: 30px; line-height: 1.1; }
+  .res-card .hh{ font-family:"JetBrains Mono", monospace; font-size: 15px; color: var(--accent); font-weight: 600; margin-top: 6px; }
+  .res-card.empty .hh{ color: var(--ink-3); font-weight: 400; font-style: italic; }
+  .res-card .seq{ font-family:"JetBrains Mono", monospace; font-size: 10px; color: var(--ink-3); margin-top: 8px; }
+
+  /* ─── Tabs ─── */
+  .tabs{ display:flex; gap: 2px; margin-bottom: 14px; border-bottom: 1px solid var(--rule); }
+  .tabs button{
+    appearance:none; background: transparent; border: 1px solid var(--rule); border-bottom: none;
+    font-family:"Noto Sans TC", sans-serif; font-size: 13px; padding: 8px 16px;
+    cursor: pointer; color: var(--ink-2); margin-bottom: -1px;
+  }
+  .tabs button.active{ background: var(--paper); color: var(--ink); font-weight: 600; }
+
+  /* ─── Toast / error ─── */
+  .alert{
+    background: var(--accent-soft); border-left: 3px solid var(--accent);
+    padding: 12px 16px; font-size: 13px; color: var(--ink); margin-bottom: 18px;
+    white-space: pre-line;
+  }
+  .alert.warn{ background: rgba(0,0,0,.04); border-left-color: var(--warn); }
+
+  /* ─── Misc ─── */
+  .row-actions{ display:flex; gap: 12px; justify-content: space-between; align-items:center; margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--rule-soft); }
+  .row-actions .left{ display:flex; gap: 12px; }
+  .row-actions .right{ display:flex; gap: 12px; }
+  .empty-note{ color: var(--ink-3); font-size: 13px; padding: 24px 0; text-align: center; font-style: italic; }
+
+  /* drag-over state for welcome */
+  .dropzone{
+    border: 1.5px dashed var(--rule-soft); padding: 24px 28px; background: rgba(255,255,255,.4);
+    margin-top: 22px; transition: all .15s ease; font-size: 13px; color: var(--ink-2);
+  }
+  .dropzone.over{ border-color: var(--accent); background: var(--accent-soft); color: var(--ink); }
+  .dropzone .mono{ display:block; margin-top:6px; font-size:11px; color: var(--ink-3); }
+
+  /* responsive */
+  @media (max-width: 900px){
+    .frame{ padding: 24px 20px 60px; }
+    .welcome-hero{ grid-template-columns: 1fr; gap: 32px; }
+    .welcome-hero h1{ font-size: 48px; }
+    .draw-wrap{ grid-template-columns: 1fr; }
+    .stats{ grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+
+<!-- React + Babel (pinned) -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<!-- SheetJS for xlsx -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="env,react">
+// excel-utils.jsx — XLSX import/export helpers
+// Exposed on window for cross-script use.
+
+const EXPECTED_COLS = {
+  spot: ["機車格號", "車格號", "格號", "車位", "spot"],
+  registered: ["登記參與戶別", "登記戶別", "登記", "registered"],
+  actual: ["實際參與戶別", "實到戶別", "實到", "actual", "present"],
+};
+
+function normalizeHeader(s) {
+  if (s == null) return "";
+  return String(s).trim().toLowerCase().replace(/\s+/g, "");
+}
+
+function findColIndex(headers, candidates) {
+  const norm = headers.map(normalizeHeader);
+  for (const cand of candidates) {
+    const c = normalizeHeader(cand);
+    const i = norm.findIndex((h) => h === c || h.includes(c));
+    if (i >= 0) return i;
+  }
+  return -1;
+}
+
+// 戶別格式檢查:{戶號}-{樓層}F,戶號 218~238 雙數,樓層 1~13
+const HOUSEHOLD_RE = /^(\d+)-(\d+)F$/;
+function validateHouseholdFormat(s) {
+  const m = s.match(HOUSEHOLD_RE);
+  if (!m) return "格式錯誤(應為「戶號-樓層F」,例:220-3F)";
+  const building = Number(m[1]);
+  const floor = Number(m[2]);
+  if (building < 218 || building > 238 || building % 2 !== 0) {
+    return `戶號 ${building} 不在 218~238 雙數範圍`;
+  }
+  if (floor < 1 || floor > 13) {
+    return `樓層 ${floor} 不在 1~13 範圍`;
+  }
+  return null;
+}
+
+// Parse imported workbook. Returns { spots, registered, actual, warnings }
+function parseWorkbook(wb) {
+  const warnings = [];
+  const sheetName = wb.SheetNames[0];
+  const sheet = wb.Sheets[sheetName];
+  const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+
+  if (!rows.length) {
+    throw new Error("檔案是空的,請使用範本填入資料。");
+  }
+
+  const headers = rows[0].map((h) => String(h ?? "").trim());
+  const iSpot = findColIndex(headers, EXPECTED_COLS.spot);
+  const iReg = findColIndex(headers, EXPECTED_COLS.registered);
+  const iAct = findColIndex(headers, EXPECTED_COLS.actual);
+
+  if (iSpot < 0 || iReg < 0 || iAct < 0) {
+    throw new Error(
+      `欄位辨識失敗。需要欄位:「機車格號」「登記參與戶別」「實際參與戶別」。\n目前讀到的標題:${headers.join(" / ")}`
+    );
+  }
+
+  const spots = [];
+  const registered = [];
+  const actual = [];
+
+  const validationErrors = [];
+  for (let r = 1; r < rows.length; r++) {
+    const row = rows[r];
+    const s = row[iSpot];
+    const reg = row[iReg];
+    const act = row[iAct];
+    if (s !== "" && s != null) spots.push(String(s).trim());
+    if (reg !== "" && reg != null) {
+      const v = String(reg).trim();
+      const err = validateHouseholdFormat(v);
+      if (err) validationErrors.push({ row: r + 1, col: "登記參與戶別", value: v, reason: err });
+      registered.push(v);
+    }
+    if (act !== "" && act != null) {
+      const v = String(act).trim();
+      const err = validateHouseholdFormat(v);
+      if (err) validationErrors.push({ row: r + 1, col: "實際參與戶別", value: v, reason: err });
+      actual.push(v);
+    }
+  }
+
+  if (validationErrors.length) {
+    const MAX_LIST = 20;
+    const lines = validationErrors.slice(0, MAX_LIST).map(
+      (e) => `· 第 ${e.row} 列「${e.col}」=「${e.value}」 — ${e.reason}`
+    );
+    const more = validationErrors.length > MAX_LIST
+      ? `\n…還有 ${validationErrors.length - MAX_LIST} 個錯誤未列出`
+      : "";
+    throw new Error(
+      `戶別格式錯誤 ${validationErrors.length} 處,請修正後重新匯入。\n` +
+      `(正確格式:「戶號-樓層F」;戶號為 218~238 雙數,樓層為 1~13)\n` +
+      lines.join("\n") + more
+    );
+  }
+
+  // dedupe + warn
+  const dedupe = (arr, label) => {
+    const seen = new Set();
+    const out = [];
+    for (const v of arr) {
+      if (seen.has(v)) {
+        warnings.push(`${label}有重複值「${v}」,已自動去除。`);
+        continue;
+      }
+      seen.add(v);
+      out.push(v);
+    }
+    return out;
+  };
+
+  return {
+    spots: dedupe(spots, "機車格號"),
+    registered: dedupe(registered, "登記戶別"),
+    actual: dedupe(actual, "實到戶別"),
+    warnings,
+  };
+}
+
+async function readFileAsWorkbook(file) {
+  const buf = await file.arrayBuffer();
+  return XLSX.read(buf, { type: "array" });
+}
+
+// Generate a downloadable template workbook
+function downloadTemplate() {
+  const data = [
+    ["機車格號", "登記參與戶別", "實際參與戶別"],
+    ["1", "220-9F", "220-9F"],
+    ["2", "218-3F", "218-3F"],
+    ["3", "218-5F", ""],
+    ["4", "220-12F", "220-12F"],
+    ["5", "218-8F", "218-8F"],
+    ["", "220-2F", "220-2F"],
+    ["", "220-13F", ""],
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws["!cols"] = [{ wch: 12 }, { wch: 18 }, { wch: 18 }];
+  // header style won't carry without paid sheetjs; rely on column widths only
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "抽籤資料");
+
+  // README sheet
+  const readme = [
+    ["欄位說明"],
+    [""],
+    ["欄位名稱", "說明"],
+    ["機車格號", "本次可抽的機車位編號(例:1, 2, A-12)。每列一格,空白略過。"],
+    ["登記參與戶別", "事先完成登記的戶別代號(例:220-9F)。"],
+    ["實際參與戶別", "當天到場參與抽籤的戶別。"],
+    [""],
+    ["合格抽籤資格 = 登記參與戶別 ∩ 實際參與戶別(取交集)"],
+    [""],
+    ["三個欄位長度可不同。空白列會被忽略,重複值會自動去除。"],
+  ];
+  const ws2 = XLSX.utils.aoa_to_sheet(readme);
+  ws2["!cols"] = [{ wch: 18 }, { wch: 70 }];
+  XLSX.utils.book_append_sheet(wb, ws2, "欄位說明");
+
+  XLSX.writeFile(wb, "機車位抽籤_範本.xlsx");
+}
+
+// Export results
+function exportResults({ assignments, eligible, registered, actual, spots, unassignedSpots, notDrawn, seed }) {
+  const wb = XLSX.utils.book_new();
+
+  // Sheet 1: assignments
+  const main = [["抽籤序", "機車格號", "中籤戶別", "抽籤時間"]];
+  assignments.forEach((a, i) => {
+    main.push([i + 1, a.spot, a.household, a.time]);
+  });
+  if (unassignedSpots && unassignedSpots.length) {
+    main.push([]);
+    main.push(["未配對車格(合格戶數不足)"]);
+    unassignedSpots.forEach((s) => main.push(["", s, "(無)", ""]));
+  }
+  const ws1 = XLSX.utils.aoa_to_sheet(main);
+  ws1["!cols"] = [{ wch: 10 }, { wch: 14 }, { wch: 16 }, { wch: 22 }];
+  XLSX.utils.book_append_sheet(wb, ws1, "抽籤結果");
+
+  // Sheet 2: 名單對照
+  const ref = [["戶別", "已登記", "實際到場", "合格", "中籤車格"]];
+  const all = new Set([...registered, ...actual]);
+  const eligibleSet = new Set(eligible);
+  const won = new Map(assignments.map((a) => [a.household, a.spot]));
+  [...all].sort().forEach((h) => {
+    ref.push([
+      h,
+      registered.includes(h) ? "✓" : "",
+      actual.includes(h) ? "✓" : "",
+      eligibleSet.has(h) ? "✓" : "",
+      won.get(h) || "",
+    ]);
+  });
+  const ws2 = XLSX.utils.aoa_to_sheet(ref);
+  ws2["!cols"] = [{ wch: 14 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 14 }];
+  XLSX.utils.book_append_sheet(wb, ws2, "戶別對照");
+
+  // Sheet 3: meta
+  const meta = [
+    ["項目", "值"],
+    ["抽籤時間", new Date().toLocaleString("zh-TW")],
+    ["亂數種子(seed)", String(seed ?? "(系統隨機)")],
+    ["可抽車格數", spots.length],
+    ["登記戶數", registered.length],
+    ["實到戶數", actual.length],
+    ["合格戶數(交集)", eligible.length],
+    ["完成配對數", assignments.length],
+    ["未配對車格數", (unassignedSpots || []).length],
+    ["合格但未中籤戶數", (notDrawn || []).length],
+  ];
+  const ws3 = XLSX.utils.aoa_to_sheet(meta);
+  ws3["!cols"] = [{ wch: 22 }, { wch: 30 }];
+  XLSX.utils.book_append_sheet(wb, ws3, "抽籤摘要");
+
+  const ts = new Date().toISOString().slice(0, 16).replace(/[-:T]/g, "");
+  XLSX.writeFile(wb, `機車位抽籤_結果_${ts}.xlsx`);
+}
+
+// Seeded RNG (mulberry32) for reproducible shuffles
+function mulberry32(seed) {
+  let s = seed >>> 0;
+  return function () {
+    s = (s + 0x6D2B79F5) >>> 0;
+    let t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function shuffleWithSeed(arr, seed) {
+  const rng = mulberry32(seed);
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+Object.assign(window, {
+  parseWorkbook,
+  readFileAsWorkbook,
+  downloadTemplate,
+  exportResults,
+  mulberry32,
+  shuffleWithSeed,
+});
+</script>
+<script type="text/babel" data-presets="env,react">
+// screens.jsx — Welcome / Preview / Drawing / Results screens
+const { useState, useEffect, useRef, useMemo, useCallback } = React;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Header / steps
+// ─────────────────────────────────────────────────────────────────────────────
+function AppHeader({ step }) {
+  const today = new Date();
+  const stamp = today.toLocaleDateString("zh-TW", { year: "numeric", month: "2-digit", day: "2-digit" });
+  return (
+    <div className="head">
+      <div className="brand">
+        <div className="logo">
+          <img src="assets/logo-qianyue.jpg" alt="皇翔芊樾" />
+        </div>
+        <div className="brand-text">
+          <div className="brand-name">皇翔芊樾</div>
+          <div className="brand-sub">Huang Hsiang Qian Yue</div>
+        </div>
+      </div>
+      <div className="meta">
+        <span className="meta-l1">機車位 公開抽籤</span>
+        EDITION · {stamp.replace(/\//g, ".")}
+      </div>
+    </div>
+  );
+}
+
+const STEPS = [
+  { id: "welcome", n: "01", lbl: "匯入資料" },
+  { id: "preview", n: "02", lbl: "確認名單" },
+  { id: "drawing", n: "03", lbl: "進行抽籤" },
+  { id: "results", n: "04", lbl: "匯出結果" },
+];
+
+function Steps({ current }) {
+  const idx = STEPS.findIndex((s) => s.id === current);
+  return (
+    <div className="steps">
+      {STEPS.map((s, i) => (
+        <React.Fragment key={s.id}>
+          <div className={`step ${i === idx ? "active" : i < idx ? "done" : ""}`}>
+            <span className="n">{s.n}</span>
+            <span className="lbl">{s.lbl}</span>
+          </div>
+          {i < STEPS.length - 1 && <span className="sep">/</span>}
+        </React.Fragment>
+      ))}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Welcome
+// ─────────────────────────────────────────────────────────────────────────────
+function WelcomeScreen({ onImport, error }) {
+  const fileRef = useRef(null);
+  const [dragOver, setDragOver] = useState(false);
+
+  const handleFile = async (file) => {
+    if (!file) return;
+    try {
+      const wb = await window.readFileAsWorkbook(file);
+      const data = window.parseWorkbook(wb);
+      onImport(data, file.name);
+    } catch (e) {
+      onImport(null, file.name, e.message || String(e));
+    }
+  };
+
+  return (
+    <div className="welcome-hero">
+      <div>
+        <div className="eyebrow">芊樾住戶 · 公開抽籤系統</div>
+        <h1>
+          機車位<br />
+          <span className="accent">公開抽籤</span>。
+        </h1>
+        <p className="sub">
+          匯入登記與實到名單,系統自動取交集為合格戶,逐格抽出機車位歸屬,結果可一鍵匯出 Excel,公開、可追溯。
+        </p>
+        <div className="actions">
+          <button className="btn accent" onClick={() => fileRef.current?.click()}>
+            匯入名單 <span className="arr">↑</span>
+          </button>
+          <button className="btn ghost" onClick={() => window.downloadTemplate()}>
+            下載 Excel 範本 <span className="arr">↓</span>
+          </button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".xlsx,.xls,.csv"
+            style={{ display: "none" }}
+            onChange={(e) => handleFile(e.target.files?.[0])}
+          />
+        </div>
+
+        <div
+          className={`dropzone ${dragOver ? "over" : ""}`}
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault(); setDragOver(false);
+            const f = e.dataTransfer.files?.[0]; if (f) handleFile(f);
+          }}
+        >
+          也可將 .xlsx 檔拖曳至此區域。
+          <span className="mono">accepted: .xlsx · .xls · .csv</span>
+        </div>
+
+        {error && <div className="alert" style={{ marginTop: 18 }}>⚠ {error}</div>}
+
+        <div className="hint">tip · 範本含三欄:機車格號 / 登記參與戶別 / 實際參與戶別</div>
+      </div>
+
+      <aside className="info-card">
+        <div className="info-title">抽籤五步驟</div>
+        <ol>
+          <li><div><b>下載範本</b><span>取得標準三欄 Excel 模板。</span></div></li>
+          <li><div><b>填入資料</b><span>把車格號、登記戶、實到戶填好。</span></div></li>
+          <li><div><b>匯入確認</b><span>系統算出合格交集,呈現預覽。</span></div></li>
+          <li><div><b>進行抽籤</b><span>逐格動畫抽出,過程透明。</span></div></li>
+          <li><div><b>匯出結果</b><span>下載 Excel,含對照與摘要。</span></div></li>
+        </ol>
+      </aside>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Preview
+// ─────────────────────────────────────────────────────────────────────────────
+function PreviewScreen({ data, fileName, onBack, onStart, warnings }) {
+  const [tab, setTab] = useState("spots");
+  const eligible = useMemo(() => {
+    const actSet = new Set(data.actual);
+    return data.registered.filter((h) => actSet.has(h));
+  }, [data]);
+
+  const eligibleSet = new Set(eligible);
+
+  const spotsCount = data.spots.length;
+  const eligibleCount = eligible.length;
+  const willAssign = Math.min(spotsCount, eligibleCount);
+  const unassignedSpots = Math.max(0, spotsCount - eligibleCount);
+  const notDrawn = Math.max(0, eligibleCount - spotsCount);
+
+  return (
+    <div>
+      {warnings && warnings.length > 0 && (
+        <div className="alert warn">
+          {warnings.map((w, i) => <div key={i}>· {w}</div>)}
+        </div>
+      )}
+
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom: 18 }}>
+        <div className="serif" style={{ fontSize: 28 }}>名單預覽</div>
+        <div className="mono" style={{ fontSize: 12, color: "var(--ink-3)" }}>SOURCE · {fileName || "imported.xlsx"}</div>
+      </div>
+
+      <div className="stats">
+        <div className="stat">
+          <div className="lbl">可抽車格</div>
+          <div className="val">{spotsCount}<span className="unit">格</span></div>
+          <div className="sub">本次抽籤標的</div>
+        </div>
+        <div className="stat">
+          <div className="lbl">登記戶數</div>
+          <div className="val">{data.registered.length}<span className="unit">戶</span></div>
+          <div className="sub">事先登記</div>
+        </div>
+        <div className="stat">
+          <div className="lbl">實到戶數</div>
+          <div className="val">{data.actual.length}<span className="unit">戶</span></div>
+          <div className="sub">當天到場</div>
+        </div>
+        <div className="stat accent">
+          <div className="lbl">合格戶數</div>
+          <div className="val">{eligibleCount}<span className="unit">戶</span></div>
+          <div className="sub">登記 ∩ 實到</div>
+        </div>
+      </div>
+
+      <div style={{ background:"var(--paper)", border:"1px solid var(--rule)", padding:"16px 20px", marginBottom: 24, display:"flex", gap: 28, flexWrap:"wrap", alignItems:"baseline" }}>
+        <div className="mono" style={{ fontSize: 12, color:"var(--ink-2)" }}>
+          推算:本次將配對 <b style={{ color:"var(--accent)", fontSize: 16 }}>{willAssign}</b> 組
+        </div>
+        {unassignedSpots > 0 && (
+          <div className="mono" style={{ fontSize: 12, color:"var(--warn, #c97a1a)" }}>
+            ⚠ 將有 <b>{unassignedSpots}</b> 個車格無人認領(合格戶數不足)
+          </div>
+        )}
+        {notDrawn > 0 && (
+          <div className="mono" style={{ fontSize: 12, color:"var(--warn, #c97a1a)" }}>
+            ⚠ 將有 <b>{notDrawn}</b> 戶合格但抽不到車格(車格不足)
+          </div>
+        )}
+        {willAssign === 0 && (
+          <div className="mono" style={{ fontSize: 12, color:"var(--accent)" }}>
+            ⚠ 目前無可配對組合,請檢查資料
+          </div>
+        )}
+      </div>
+
+      <div className="panel">
+        <div className="tabs">
+          <button className={tab==="spots"?"active":""} onClick={()=>setTab("spots")}>
+            車格清單 · {spotsCount}
+          </button>
+          <button className={tab==="registered"?"active":""} onClick={()=>setTab("registered")}>
+            登記戶 · {data.registered.length}
+          </button>
+          <button className={tab==="actual"?"active":""} onClick={()=>setTab("actual")}>
+            實到戶 · {data.actual.length}
+          </button>
+          <button className={tab==="eligible"?"active":""} onClick={()=>setTab("eligible")}>
+            合格戶 · {eligibleCount}
+          </button>
+        </div>
+
+        {tab === "spots" && (
+          <div className="chip-list">
+            {data.spots.length === 0 && <div className="empty-note">沒有車格資料。</div>}
+            {data.spots.map((s) => <span key={s} className="chip">#{s}</span>)}
+          </div>
+        )}
+        {tab === "registered" && (
+          <div>
+            <div className="chip-list">
+              {data.registered.map((h) => (
+                <span key={h} className={`chip ${eligibleSet.has(h) ? "eligible" : ""}`}>{h}</span>
+              ))}
+            </div>
+            <div className="legend">
+              <span><i className="sw" style={{ background:"var(--ink)" }}></i>已實到(合格)</span>
+              <span><i className="sw" style={{ background:"var(--bg)", border:"1px solid var(--rule-soft)" }}></i>僅登記</span>
+            </div>
+          </div>
+        )}
+        {tab === "actual" && (
+          <div>
+            <div className="chip-list">
+              {data.actual.map((h) => {
+                const reg = data.registered.includes(h);
+                return <span key={h} className={`chip ${reg ? "eligible" : "muted"}`}>{h}</span>;
+              })}
+            </div>
+            <div className="legend">
+              <span><i className="sw" style={{ background:"var(--ink)" }}></i>已登記(合格)</span>
+              <span><i className="sw" style={{ background:"transparent", border:"1px dashed var(--rule-soft)" }}></i>未登記(不合格)</span>
+            </div>
+          </div>
+        )}
+        {tab === "eligible" && (
+          <div className="chip-list">
+            {eligible.length === 0 && <div className="empty-note">尚無合格戶。請檢查登記名單與實到名單是否有交集。</div>}
+            {eligible.map((h) => <span key={h} className="chip eligible">{h}</span>)}
+          </div>
+        )}
+      </div>
+
+      <div className="row-actions">
+        <div className="left">
+          <button className="btn ghost" onClick={onBack}>← 重新匯入</button>
+        </div>
+        <div className="right">
+          <button className="btn accent" disabled={willAssign === 0} onClick={() => onStart(eligible)}>
+            開始抽籤 <span className="arr">→</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+window.AppHeader = AppHeader;
+window.Steps = Steps;
+window.WelcomeScreen = WelcomeScreen;
+window.PreviewScreen = PreviewScreen;
+</script>
+<script type="text/babel" data-presets="env,react">
+// drawing.jsx — Drawing animation + Results screens
+const { useState: useStateD, useEffect: useEffectD, useRef: useRefD, useMemo: useMemoD, useCallback: useCallbackD } = React;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Drawing animation
+// ─────────────────────────────────────────────────────────────────────────────
+function DrawingScreen({ spots, eligible, seed, speed, autoPlay, onDone, onBack }) {
+  // Pre-compute the full assignment list (we already know who gets what — animation is theater)
+  const plan = useMemoD(() => {
+    const shuffledHouseholds = window.shuffleWithSeed(eligible, seed);
+    const shuffledSpots = spots.slice(); // spots in given order
+    const pairs = [];
+    const n = Math.min(shuffledSpots.length, shuffledHouseholds.length);
+    for (let i = 0; i < n; i++) {
+      pairs.push({ spot: shuffledSpots[i], household: shuffledHouseholds[i] });
+    }
+    const unassignedSpots = shuffledSpots.slice(n);
+    const notDrawn = shuffledHouseholds.slice(n);
+    return { pairs, unassignedSpots, notDrawn };
+  }, [spots, eligible, seed]);
+
+  const [index, setIndex] = useStateD(0); // 0 .. plan.pairs.length
+  const [running, setRunning] = useStateD(autoPlay);
+  const [reelOffset, setReelOffset] = useStateD(0);
+  const [settled, setSettled] = useStateD(false);
+  const [reelItems, setReelItems] = useStateD([]); // names that scroll past
+  const tickAudioRef = useRefD(null);
+  const timerRef = useRefD(null);
+
+  const ITEM_H = 78;
+  const SPIN_DURATION = Math.max(400, 2400 - speed * 18); // ms; speed 0..100
+
+  const buildReelItems = useCallbackD((finalName) => {
+    // ~16 ticks + final name resting at last position
+    const pool = eligible.length ? eligible : ["—"];
+    const tickCount = 16;
+    const out = [];
+    for (let i = 0; i < tickCount; i++) {
+      out.push(pool[Math.floor(Math.random() * pool.length)]);
+    }
+    out.push(finalName);
+    return out;
+  }, [eligible]);
+
+  // Trigger spin for current index
+  useEffectD(() => {
+    if (!running) return;
+    if (index >= plan.pairs.length) {
+      setRunning(false);
+      return;
+    }
+    const finalName = plan.pairs[index].household;
+    const items = buildReelItems(finalName);
+    setReelItems(items);
+    setReelOffset(0);
+    setSettled(false);
+
+    // Animate offset to last item
+    // Use rAF to apply transition then change offset on next tick
+    const targetOffset = -(items.length - 1) * ITEM_H;
+    const rafId = requestAnimationFrame(() => {
+      requestAnimationFrame(() => setReelOffset(targetOffset));
+    });
+
+    const settleTime = SPIN_DURATION;
+    timerRef.current = setTimeout(() => {
+      setSettled(true);
+      // pause briefly to let user see result
+      const pause = Math.max(280, 1200 - speed * 9);
+      setTimeout(() => {
+        setIndex((i) => i + 1);
+      }, pause);
+    }, settleTime);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      clearTimeout(timerRef.current);
+    };
+  }, [running, index, plan.pairs, buildReelItems, SPIN_DURATION, speed]);
+
+  // Auto-finish handler
+  useEffectD(() => {
+    if (index >= plan.pairs.length && plan.pairs.length > 0) {
+      // ready to wrap; do nothing here, user navigates via button
+    }
+  }, [index, plan.pairs.length]);
+
+  const drawnLog = plan.pairs.slice(0, index + (settled && index < plan.pairs.length ? 1 : 0));
+  // Only show settled entries in log
+  const visibleLog = plan.pairs.slice(0, index + (settled ? 1 : 0)).slice(0, plan.pairs.length);
+
+  const currentPair = plan.pairs[index];
+  const remaining = plan.pairs.length - index;
+  const allDone = index >= plan.pairs.length;
+
+  const handleSkipAll = () => {
+    clearTimeout(timerRef.current);
+    setRunning(false);
+    setIndex(plan.pairs.length);
+    setSettled(true);
+  };
+
+  const handleStep = () => {
+    if (running) return;
+    setRunning(true);
+  };
+
+  const handlePause = () => {
+    setRunning(false);
+    clearTimeout(timerRef.current);
+  };
+
+  // Build dynamic transition style
+  const reelStyle = {
+    transform: `translateY(${reelOffset}px)`,
+    transition: reelOffset === 0
+      ? "none"
+      : `transform ${SPIN_DURATION}ms cubic-bezier(.18,.66,.2,1)`,
+  };
+
+  return (
+    <div>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom: 20 }}>
+        <div className="serif" style={{ fontSize: 28 }}>抽籤進行中</div>
+        <div className="mono" style={{ fontSize: 12, color:"var(--ink-3)" }}>
+          SEED · {seed} · TARGET {plan.pairs.length} 組
+        </div>
+      </div>
+
+      <div className="draw-wrap">
+        <div className="draw-stage">
+          <div className="draw-now">
+            <div className="lbl">— 第 {Math.min(index + 1, plan.pairs.length)} 籤 / 共 {plan.pairs.length} 籤 —</div>
+            {allDone ? (
+              <div>
+                <div className="slot-no" style={{ fontSize: 64, color:"var(--accent)" }}>抽籤完成</div>
+                <div className="mono" style={{ fontSize: 13, color:"var(--ink-2)" }}>
+                  共配對 {plan.pairs.length} 組 · 點下方按鈕查看完整結果
+                </div>
+              </div>
+            ) : currentPair ? (
+              <>
+                <div className="slot-no">
+                  <span className="pre">車格</span>{currentPair.spot}
+                </div>
+                <div className="arrow">▼</div>
+                <div className={`reel ${settled ? "settled" : ""}`}>
+                  <div className="reel-fade-t"></div>
+                  <div className="reel-fade-b"></div>
+                  <div className="reel-track" style={reelStyle}>
+                    {reelItems.map((it, i) => (
+                      <div className="item" key={i}>{it}</div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="slot-no" style={{ fontSize: 48 }}>準備抽籤…</div>
+            )}
+          </div>
+
+          <div className="draw-controls">
+            <div className="ticker">
+              {allDone ? "已完成全部抽籤" : `剩餘 ${remaining} 籤`}
+            </div>
+            {!allDone && !running && (
+              <button className="btn accent" onClick={handleStep}>
+                {index === 0 ? "開始抽籤" : "繼續"} <span className="arr">▶</span>
+              </button>
+            )}
+            {!allDone && running && (
+              <button className="btn ghost" onClick={handlePause}>暫停 ❚❚</button>
+            )}
+            {!allDone && (
+              <button className="btn ghost" onClick={handleSkipAll}>跳過動畫 ⇥</button>
+            )}
+          </div>
+        </div>
+
+        <div className="draw-log">
+          <div className="draw-log-inner">
+          {visibleLog.length === 0 ? (
+            <div className="empty-note">尚未抽出任何車格…</div>
+          ) : (
+            visibleLog.map((p, i) => (
+              <div key={i} className={`log-row ${i === visibleLog.length - 1 ? "fresh" : ""}`}>
+                <span className="no">籤 {String(i + 1).padStart(2, "0")}</span>
+                <span className="spot">車格 #{p.spot}</span>
+                <span className="arr">→</span>
+                <span className="hh">{p.household}</span>
+              </div>
+            ))
+          )}
+          {allDone && plan.unassignedSpots.length > 0 && (
+            <>
+              <div style={{ marginTop: 18, fontSize:11, fontFamily:"JetBrains Mono, monospace", color:"var(--ink-3)", letterSpacing:".1em", textTransform:"uppercase", borderTop:"1px dashed var(--rule-soft)", paddingTop: 12 }}>
+                未配對車格
+              </div>
+              {plan.unassignedSpots.map((s, i) => (
+                <div key={`u${i}`} className="log-row empty">
+                  <span className="no">空</span>
+                  <span className="spot">車格 #{s}</span>
+                  <span className="arr">→</span>
+                  <span className="hh">(無人)</span>
+                </div>
+              ))}
+            </>
+          )}
+          </div>
+        </div>
+      </div>
+
+      <div className="row-actions">
+        <div className="left">
+          <button className="btn ghost" onClick={onBack}>← 回到名單</button>
+        </div>
+        <div className="right">
+          {allDone && (
+            <button className="btn accent" onClick={() => onDone(plan)}>
+              查看完整結果 <span className="arr">→</span>
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Results
+// ─────────────────────────────────────────────────────────────────────────────
+function ResultsScreen({ plan, data, eligible, seed, onRestart, onBack }) {
+  const now = useMemoD(() => new Date(), []);
+  const timestamp = now.toLocaleString("zh-TW");
+
+  const assignments = plan.pairs.map((p) => ({
+    spot: p.spot,
+    household: p.household,
+    time: timestamp,
+  }));
+
+  const handleExport = () => {
+    window.exportResults({
+      assignments,
+      eligible,
+      registered: data.registered,
+      actual: data.actual,
+      spots: data.spots,
+      unassignedSpots: plan.unassignedSpots,
+      notDrawn: plan.notDrawn,
+      seed,
+    });
+  };
+
+  const handlePrint = () => window.print();
+
+  return (
+    <div>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom: 18 }}>
+        <div className="serif" style={{ fontSize: 28 }}>抽籤結果</div>
+        <div className="mono" style={{ fontSize: 12, color:"var(--ink-3)" }}>
+          SEED {seed} · {timestamp}
+        </div>
+      </div>
+
+      <div className="stats">
+        <div className="stat accent">
+          <div className="lbl">完成配對</div>
+          <div className="val">{assignments.length}<span className="unit">組</span></div>
+          <div className="sub">已分配車格</div>
+        </div>
+        <div className="stat">
+          <div className="lbl">未配對車格</div>
+          <div className="val">{plan.unassignedSpots.length}<span className="unit">格</span></div>
+          <div className="sub">無人認領</div>
+        </div>
+        <div className="stat">
+          <div className="lbl">未中籤戶</div>
+          <div className="val">{plan.notDrawn.length}<span className="unit">戶</span></div>
+          <div className="sub">合格但車格不足</div>
+        </div>
+        <div className="stat">
+          <div className="lbl">總合格戶</div>
+          <div className="val">{eligible.length}<span className="unit">戶</span></div>
+          <div className="sub">登記 ∩ 實到</div>
+        </div>
+      </div>
+
+      <div className="panel" style={{ marginBottom: 22 }}>
+        <div className="panel-h">
+          <h3>車格配對清單</h3>
+          <span className="count">共 {assignments.length} 組</span>
+        </div>
+        <div className="results-grid">
+          {assignments.map((a, i) => (
+            <div key={i} className="res-card">
+              <div className="lbl">車格</div>
+              <div className="spot">#{a.spot}</div>
+              <div className="hh">{a.household}</div>
+              <div className="seq">第 {String(i + 1).padStart(2, "0")} 籤</div>
+            </div>
+          ))}
+          {plan.unassignedSpots.map((s, i) => (
+            <div key={`u${i}`} className="res-card empty">
+              <div className="lbl">車格</div>
+              <div className="spot">#{s}</div>
+              <div className="hh">無人認領</div>
+              <div className="seq">未配對</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {plan.notDrawn.length > 0 && (
+        <div className="panel" style={{ marginBottom: 22 }}>
+          <div className="panel-h">
+            <h3>合格但未中籤戶</h3>
+            <span className="count">{plan.notDrawn.length} 戶</span>
+          </div>
+          <div className="chip-list">
+            {plan.notDrawn.map((h) => <span key={h} className="chip">{h}</span>)}
+          </div>
+        </div>
+      )}
+
+      <div className="row-actions">
+        <div className="left">
+          <button className="btn ghost" onClick={onBack}>← 重新抽籤(換種子)</button>
+          <button className="btn ghost" onClick={onRestart}>↺ 回到起點</button>
+        </div>
+        <div className="right">
+          <button className="btn ghost" onClick={handlePrint}>列印 / 存 PDF</button>
+          <button className="btn accent" onClick={handleExport}>
+            匯出 Excel <span className="arr">↓</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+window.DrawingScreen = DrawingScreen;
+window.ResultsScreen = ResultsScreen;
+</script>
+<script type="text/babel" data-presets="env,react">
+// app.jsx — root component, state machine
+const { useState: useStateA } = React;
+
+function App() {
+  const [screen, setScreen] = useStateA("welcome"); // welcome | preview | drawing | results
+  const [data, setData] = useStateA(null);
+  const [fileName, setFileName] = useStateA("");
+  const [error, setError] = useStateA(null);
+  const [warnings, setWarnings] = useStateA([]);
+  const [eligible, setEligible] = useStateA([]);
+  const [seed, setSeed] = useStateA(0);
+  const [plan, setPlan] = useStateA(null);
+
+  // ── Demo data loader (for testing without uploading a file)
+  const loadDemoData = () => {
+    const spots = Array.from({ length: 12 }, (_, i) => String(i + 1));
+    const households = [
+      "220-2F", "220-3F", "220-5F", "220-7F", "220-9F", "220-11F", "220-12F", "220-13F",
+      "218-2F", "218-3F", "218-5F", "218-6F", "218-8F", "218-10F", "218-12F",
+    ];
+    const registered = households.slice();
+    const actual = ["220-2F","220-5F","220-7F","220-9F","220-11F","220-12F","218-2F","218-3F","218-5F","218-8F","218-10F","218-12F","218-13F"];
+    setData({ spots, registered, actual });
+    setFileName("示範資料.xlsx");
+    setWarnings(["這是內建示範資料,實際使用請匯入自己的名單。"]);
+    setError(null);
+    setScreen("preview");
+  };
+
+  const handleImport = (newData, name, err) => {
+    if (err) {
+      setError(err);
+      return;
+    }
+    setError(null);
+    setData(newData);
+    setFileName(name);
+    setWarnings(newData.warnings || []);
+    setScreen("preview");
+  };
+
+  const handleStartDrawing = (eligibleList) => {
+    setEligible(eligibleList);
+    // Generate a fresh seed each time
+    setSeed(Math.floor(Math.random() * 1_000_000));
+    setPlan(null);
+    setScreen("drawing");
+  };
+
+  const handleDrawingDone = (planResult) => {
+    setPlan(planResult);
+    setScreen("results");
+  };
+
+  const handleRedraw = () => {
+    // re-roll seed and go back to drawing
+    setSeed(Math.floor(Math.random() * 1_000_000));
+    setPlan(null);
+    setScreen("drawing");
+  };
+
+  const handleRestart = () => {
+    setData(null);
+    setFileName("");
+    setError(null);
+    setWarnings([]);
+    setEligible([]);
+    setPlan(null);
+    setScreen("welcome");
+  };
+
+  return (
+    <div className="frame">
+      <AppHeader />
+      <Steps current={screen} />
+
+      {screen === "welcome" && (
+        <>
+          <WelcomeScreen onImport={handleImport} error={error} />
+          <div style={{ marginTop: 56, paddingTop: 22, borderTop: "1px dashed var(--rule-soft)", display:"flex", justifyContent:"space-between", alignItems:"baseline", flexWrap:"wrap", gap: 16 }}>
+            <div className="mono" style={{ fontSize: 11, color:"var(--ink-3)", letterSpacing:".06em" }}>
+              · 全程於瀏覽器執行,不上傳任何資料 · 可部署於 GitHub Pages 供社區公開使用
+            </div>
+            <button className="btn ghost" style={{ fontSize: 12, padding: "8px 14px" }} onClick={loadDemoData}>
+              載入示範資料
+            </button>
+          </div>
+        </>
+      )}
+
+      {screen === "preview" && data && (
+        <PreviewScreen
+          data={data}
+          fileName={fileName}
+          warnings={warnings}
+          onBack={handleRestart}
+          onStart={handleStartDrawing}
+        />
+      )}
+
+      {screen === "drawing" && data && (
+        <DrawingScreen
+          spots={data.spots}
+          eligible={eligible}
+          seed={seed}
+          speed={50}
+          autoPlay={true}
+          onDone={handleDrawingDone}
+          onBack={() => setScreen("preview")}
+        />
+      )}
+
+      {screen === "results" && plan && (
+        <ResultsScreen
+          plan={plan}
+          data={data}
+          eligible={eligible}
+          seed={seed}
+          onRestart={handleRestart}
+          onBack={handleRedraw}
+        />
+      )}
+    </div>
+  );
+}
+
+// Mount
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
+</script>
+</body>
+</html>
