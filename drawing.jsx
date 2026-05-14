@@ -32,8 +32,8 @@ function DrawingScreen({ spots, eligible, seed, autoPlay, onDone, onBack }) {
   const timerRef = useRefD(null);
 
   const ITEM_H = 78;
-  const SPIN_DURATION = 200; // ms — 轉輪動畫
-  const PAUSE_AFTER = 100;   // ms — 每籤結果停留
+  const SPIN_DURATION = 1500; // ms — 轉輪動畫
+  const PAUSE_AFTER = 750;    // ms — 每籤結果停留
 
   const buildReelItems = useCallbackD((finalName) => {
     // ~16 ticks + final name resting at last position
@@ -264,20 +264,26 @@ function ResultsScreen({ plan, data, eligible, seed, onRestart, onBack }) {
     time: timestamp,
   }));
 
-  const handleExport = () => {
-    window.exportResults({
-      assignments,
-      waitlist: plan.waitlist.map((w) => ({ rank: w.rank, household: w.household, time: timestamp })),
-      eligible,
-      registered: data.registered,
-      actual: data.actual,
-      spots: data.spots,
-      unassignedSpots: plan.unassignedSpots,
-      seed,
-    });
-  };
+  const [exporting, setExporting] = useStateD(false);
 
-  const handlePrint = () => window.print();
+  const handleExport = async () => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      await window.exportResults({
+        assignments,
+        waitlist: plan.waitlist.map((w) => ({ rank: w.rank, household: w.household, time: timestamp })),
+        eligible,
+        registered: data.registered,
+        actual: data.actual,
+        spots: data.spots,
+        unassignedSpots: plan.unassignedSpots,
+        seed,
+      });
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <div>
@@ -361,9 +367,8 @@ function ResultsScreen({ plan, data, eligible, seed, onRestart, onBack }) {
           <button className="btn ghost" onClick={onRestart}>↺ 回到起點</button>
         </div>
         <div className="right">
-          <button className="btn ghost" onClick={handlePrint}>列印 / 存 PDF</button>
-          <button className="btn accent" onClick={handleExport}>
-            匯出 Excel <span className="arr">↓</span>
+          <button className="btn accent" onClick={handleExport} disabled={exporting}>
+            {exporting ? "正在產生 PDF…" : "匯出 PDF"} <span className="arr">↓</span>
           </button>
         </div>
       </div>

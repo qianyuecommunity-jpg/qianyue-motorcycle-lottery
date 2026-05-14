@@ -77,7 +77,7 @@ function WelcomeScreen({ onImport, error }) {
           <span className="accent">公開抽籤</span>。
         </h1>
         <p className="sub">
-          匯入登記與實到名單,系統自動取交集為合格戶,逐格抽出機車位歸屬,結果可一鍵匯出 Excel,公開、可追溯。
+          匯入登記與實到名單,系統自動取交集為合格戶,逐格抽出機車位歸屬,結果可一鍵匯出 PDF,公開、可追溯。
         </p>
         <div className="actions">
           <button className="btn accent" onClick={() => fileRef.current?.click()}>
