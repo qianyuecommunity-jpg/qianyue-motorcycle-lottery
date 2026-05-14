@@ -167,7 +167,7 @@ function downloadTemplate() {
 }
 
 // Export results
-function exportResults({ assignments, eligible, registered, actual, spots, unassignedSpots, notDrawn, seed }) {
+function exportResults({ assignments, waitlist, eligible, registered, actual, spots, unassignedSpots, seed }) {
   const wb = XLSX.utils.book_new();
 
   // Sheet 1: assignments
@@ -180,22 +180,28 @@ function exportResults({ assignments, eligible, registered, actual, spots, unass
     main.push(["未配對車格(合格戶數不足)"]);
     unassignedSpots.forEach((s) => main.push(["", s, "(無)", ""]));
   }
+  if (waitlist && waitlist.length) {
+    main.push([]);
+    main.push(["候補名單(車格不足,依抽籤順位)"]);
+    waitlist.forEach((w) => main.push([w.rank, `候補 ${w.rank}`, w.household, w.time || ""]));
+  }
   const ws1 = XLSX.utils.aoa_to_sheet(main);
   ws1["!cols"] = [{ wch: 10 }, { wch: 14 }, { wch: 16 }, { wch: 22 }];
   XLSX.utils.book_append_sheet(wb, ws1, "抽籤結果");
 
   // Sheet 2: 名單對照
-  const ref = [["戶別", "已登記", "實際到場", "合格", "中籤車格"]];
+  const ref = [["戶別", "已登記", "實際到場", "合格", "中籤車格 / 候補"]];
   const all = new Set([...registered, ...actual]);
   const eligibleSet = new Set(eligible);
-  const won = new Map(assignments.map((a) => [a.household, a.spot]));
+  const wonSpot = new Map(assignments.map((a) => [a.household, a.spot]));
+  const wonRank = new Map((waitlist || []).map((w) => [w.household, w.rank]));
   [...all].sort().forEach((h) => {
     ref.push([
       h,
       registered.includes(h) ? "✓" : "",
       actual.includes(h) ? "✓" : "",
       eligibleSet.has(h) ? "✓" : "",
-      won.get(h) || "",
+      wonSpot.has(h) ? wonSpot.get(h) : wonRank.has(h) ? `候補 ${wonRank.get(h)}` : "",
     ]);
   });
   const ws2 = XLSX.utils.aoa_to_sheet(ref);
@@ -213,7 +219,7 @@ function exportResults({ assignments, eligible, registered, actual, spots, unass
     ["合格戶數(交集)", eligible.length],
     ["完成配對數", assignments.length],
     ["未配對車格數", (unassignedSpots || []).length],
-    ["合格但未中籤戶數", (notDrawn || []).length],
+    ["候補戶數", (waitlist || []).length],
   ];
   const ws3 = XLSX.utils.aoa_to_sheet(meta);
   ws3["!cols"] = [{ wch: 22 }, { wch: 30 }];

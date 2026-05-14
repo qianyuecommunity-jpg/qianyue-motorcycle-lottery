@@ -143,7 +143,7 @@ function PreviewScreen({ data, fileName, onBack, onStart, warnings }) {
   const eligibleCount = eligible.length;
   const willAssign = Math.min(spotsCount, eligibleCount);
   const unassignedSpots = Math.max(0, spotsCount - eligibleCount);
-  const notDrawn = Math.max(0, eligibleCount - spotsCount);
+  const waitlistCount = Math.max(0, eligibleCount - spotsCount);
 
   return (
     <div>
@@ -190,9 +190,9 @@ function PreviewScreen({ data, fileName, onBack, onStart, warnings }) {
             ⚠ 將有 <b>{unassignedSpots}</b> 個車格無人認領(合格戶數不足)
           </div>
         )}
-        {notDrawn > 0 && (
+        {waitlistCount > 0 && (
           <div className="mono" style={{ fontSize: 12, color:"var(--warn, #c97a1a)" }}>
-            ⚠ 將有 <b>{notDrawn}</b> 戶合格但抽不到車格(車格不足)
+            ⚠ 將有 <b>{waitlistCount}</b> 戶抽為候補(車格不足)
           </div>
         )}
         {willAssign === 0 && (
