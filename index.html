@@ -1163,6 +1163,16 @@ function DrawingScreen({ data, eligible, seed, autoPlay, onBack }) {
     }
   };
 
+  // 抽籤完成後自動匯出一次 PDF;失敗或想重抓時可再按右下角按鈕
+  const autoExportRef = useRefD(false);
+  useEffectD(() => {
+    if (!allDone || autoExportRef.current) return;
+    autoExportRef.current = true;
+    // 延遲讓「抽籤完成」畫面先 paint,避免 html2canvas 抓到動畫中間態
+    const t = setTimeout(() => { handleExport(); }, 800);
+    return () => clearTimeout(t);
+  }, [allDone]);
+
   const reelStyle = {
     transform: `translateY(${reelOffset}px)`,
     transition: reelOffset === 0
