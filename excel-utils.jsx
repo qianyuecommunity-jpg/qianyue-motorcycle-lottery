@@ -2,31 +2,20 @@
 // Exposed on window for cross-script use.
 
 const EXPECTED_COLS = {
-  spot: ["機車格號", "車格號", "格號", "車位", "spot"],
-  registered: ["登記參與戶別", "登記戶別", "登記", "registered"],
-  actual: ["實際參與戶別", "實到戶別", "實到", "actual", "present"],
+  spot: "機車格號",
+  registered: "登記參與戶別",
+  actual: "實際參與戶別",
 };
 
-function normalizeHeader(s) {
-  if (s == null) return "";
-  return String(s).trim().toLowerCase().replace(/\s+/g, "");
+function findColIndex(headers, expected) {
+  return headers.findIndex((h) => String(h ?? "").trim() === expected);
 }
 
-function findColIndex(headers, candidates) {
-  const norm = headers.map(normalizeHeader);
-  for (const cand of candidates) {
-    const c = normalizeHeader(cand);
-    const i = norm.findIndex((h) => h === c || h.includes(c));
-    if (i >= 0) return i;
-  }
-  return -1;
-}
-
-// 戶別格式檢查:{戶號}-{樓層}F,戶號 218~238 雙數,樓層 1~13
-const HOUSEHOLD_RE = /^(\d+)-(\d+)F$/;
+// 戶別格式檢查:XXX號X樓,戶號 218~238 雙數,樓層 1~13
+const HOUSEHOLD_RE = /^(\d+)號(\d+)樓$/;
 function validateHouseholdFormat(s) {
   const m = s.match(HOUSEHOLD_RE);
-  if (!m) return "格式錯誤(應為「戶號-樓層F」,例:220-3F)";
+  if (!m) return "格式錯誤(應為「XXX號X樓」,例:228號3樓)";
   const building = Number(m[1]);
   const floor = Number(m[2]);
   if (building < 218 || building > 238 || building % 2 !== 0) {
@@ -122,7 +111,7 @@ function parseWorkbook(wb) {
       : "";
     throw new Error(
       `資料檢核錯誤 ${validationErrors.length} 處,請修正後重新匯入。\n` +
-      `(戶別格式:「戶號-樓層F」;戶號 218~238 雙數;樓層 1~13;同一欄位內不可重複)\n` +
+      `(戶別格式:「XXX號X樓」;戶號 218~238 雙數;樓層 1~13;同一欄位內不可重複)\n` +
       lines.join("\n") + more
     );
   }
@@ -136,17 +125,33 @@ async function readFileAsWorkbook(file) {
 }
 
 // Generate a downloadable template workbook
+function buildTemplateSpots() {
+  const spots = [];
+  for (let n = 4; n <= 10; n++) spots.push(String(n));
+  for (let n = 12; n <= 62; n++) spots.push(String(n));
+  for (const a of ["1", "2", "3"]) for (const b of ["左", "中", "右"]) spots.push(a + b);
+  for (const p of ["106", "108"]) for (let i = 1; i <= 4; i++) spots.push(`${p}-${i}`);
+  return spots;
+}
+
 function downloadTemplate() {
-  const data = [
-    ["機車格號", "登記參與戶別", "實際參與戶別"],
-    ["1", "220-9F", "220-9F"],
-    ["2", "218-3F", "218-3F"],
-    ["3", "218-5F", ""],
-    ["4", "220-12F", "220-12F"],
-    ["5", "218-8F", "218-8F"],
-    ["", "220-2F", "220-2F"],
-    ["", "220-13F", ""],
+  const spots = buildTemplateSpots();
+  const exampleHouseholds = [
+    ["220號9樓", "220號9樓"],
+    ["218號3樓", "218號3樓"],
+    ["218號5樓", ""],
+    ["220號12樓", "220號12樓"],
+    ["218號8樓", "218號8樓"],
+    ["220號2樓", "220號2樓"],
+    ["220號13樓", ""],
   ];
+
+  const data = [["機車格號", "登記參與戶別", "實際參與戶別"]];
+  spots.forEach((spot, i) => {
+    const ex = exampleHouseholds[i] || ["", ""];
+    data.push([spot, ex[0], ex[1]]);
+  });
+
   const ws = XLSX.utils.aoa_to_sheet(data);
   ws["!cols"] = [{ wch: 12 }, { wch: 18 }, { wch: 18 }];
   // header style won't carry without paid sheetjs; rely on column widths only
@@ -158,8 +163,8 @@ function downloadTemplate() {
     ["欄位說明"],
     [""],
     ["欄位名稱", "說明"],
-    ["機車格號", "本次可抽的機車位編號(例:1, 2, A-12)。每列一格,空白略過。"],
-    ["登記參與戶別", "事先完成登記的戶別代號(例:220-9F)。"],
+    ["機車格號", "本次可抽的機車位編號(例:4, 12, 1左, 106-1)。每列一格,空白略過。"],
+    ["登記參與戶別", "事先完成登記的戶別代號(例:228號3樓)。"],
     ["實際參與戶別", "當天到場參與抽籤的戶別。"],
     [""],
     ["合格抽籤資格 = 登記參與戶別 ∩ 實際參與戶別(取交集)"],
