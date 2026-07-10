@@ -11,18 +11,31 @@ function findColIndex(headers, expected) {
   return headers.findIndex((h) => String(h ?? "").trim() === expected);
 }
 
-// 戶別格式檢查:XXX號X樓,戶號 218~238 雙數,樓層 1~13
+// 戶別格式檢查:XXX號X樓。社區門牌無 4 結尾(無 224、234);
+// 218/220/222/226 無 1~2 樓,238 無 1 樓。
 const HOUSEHOLD_RE = /^(\d+)號(\d+)樓$/;
+const BUILDING_FLOORS = {
+  218: [3, 13],
+  220: [3, 13],
+  222: [3, 13],
+  226: [3, 13],
+  228: [1, 13],
+  230: [1, 13],
+  232: [1, 13],
+  236: [1, 13],
+  238: [2, 13],
+};
 function validateHouseholdFormat(s) {
   const m = s.match(HOUSEHOLD_RE);
   if (!m) return "格式錯誤(應為「XXX號X樓」,例:228號3樓)";
   const building = Number(m[1]);
   const floor = Number(m[2]);
-  if (building < 218 || building > 238 || building % 2 !== 0) {
-    return `戶號 ${building} 不在 218~238 雙數範圍`;
+  const range = BUILDING_FLOORS[building];
+  if (!range) {
+    return `戶號 ${building} 不存在(有效戶號:${Object.keys(BUILDING_FLOORS).join("、")})`;
   }
-  if (floor < 1 || floor > 13) {
-    return `樓層 ${floor} 不在 1~13 範圍`;
+  if (floor < range[0] || floor > range[1]) {
+    return `${building}號 無 ${floor} 樓(有效樓層:${range[0]}~${range[1]})`;
   }
   return null;
 }
@@ -111,7 +124,7 @@ function parseWorkbook(wb) {
       : "";
     throw new Error(
       `資料檢核錯誤 ${validationErrors.length} 處,請修正後重新匯入。\n` +
-      `(戶別格式:「XXX號X樓」;戶號 218~238 雙數;樓層 1~13;同一欄位內不可重複)\n` +
+      `(戶別格式:「XXX號X樓」;戶號 218~238 雙數且無 4 結尾;218/220/222/226 為 3~13 樓、238 為 2~13 樓、其餘 1~13 樓;同一欄位內不可重複)\n` +
       lines.join("\n") + more
     );
   }
@@ -142,7 +155,7 @@ function downloadTemplate() {
     ["218號5樓", ""],
     ["220號12樓", "220號12樓"],
     ["218號8樓", "218號8樓"],
-    ["220號2樓", "220號2樓"],
+    ["228號2樓", "228號2樓"],
     ["220號13樓", ""],
   ];
 
@@ -170,6 +183,8 @@ function downloadTemplate() {
     ["合格抽籤資格 = 登記參與戶別 ∩ 實際參與戶別(取交集)"],
     [""],
     ["三個欄位長度可不同。空白列會被忽略,前後空白會自動去除;同一欄位內不可重複,否則匯入時會回報錯誤。"],
+    [""],
+    ["有效戶別:戶號 218~238 雙數且無 4 結尾(無 224、234);218/220/222/226 為 3~13 樓、238 為 2~13 樓、其餘 1~13 樓。"],
   ];
   const ws2 = XLSX.utils.aoa_to_sheet(readme);
   ws2["!cols"] = [{ wch: 18 }, { wch: 70 }];
@@ -385,6 +400,7 @@ function shuffleWithSeed(arr, seed) {
 }
 
 Object.assign(window, {
+  BUILDING_FLOORS,
   parseWorkbook,
   readFileAsWorkbook,
   downloadTemplate,
