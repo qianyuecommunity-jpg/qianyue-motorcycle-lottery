@@ -1,6 +1,56 @@
 // drawing.jsx — Drawing animation + 結束時直接匯出 PDF
 const { useState: useStateD, useEffect: useEffectD, useRef: useRefD, useMemo: useMemoD, useCallback: useCallbackD } = React;
 
+// 中籤結果矩陣:與名單預覽同一張 戶號 × 樓層 表,格內改放抽到的車格號;
+// 候補戶直接在格內顯示「補N」順位
+function ResultMatrix({ pairs, waitlist }) {
+  const buildings = Object.keys(BUILDING_FLOORS).map(Number);
+  const maxFloor = Math.max(...Object.values(BUILDING_FLOORS).map(([, hi]) => hi));
+  const spotByHousehold = new Map(pairs.map((p) => [p.household, p.spot]));
+  const rankByHousehold = new Map(waitlist.map((w) => [w.household, w.rank]));
+
+  const cellOf = (b, f) => {
+    const [lo, hi] = BUILDING_FLOORS[b];
+    if (f < lo || f > hi) return null; // 該戶不存在 → 斜紋
+    const h = `${b}號${f}樓`;
+    if (spotByHousehold.has(h)) {
+      const spot = spotByHousehold.get(h);
+      return { h, cls: "win", mark: spot, label: `車格 #${spot}` };
+    }
+    if (rankByHousehold.has(h)) {
+      const rank = rankByHousehold.get(h);
+      return { h, cls: "wait", mark: `補${rank}`, label: `候補第 ${rank} 順位` };
+    }
+    return { h, cls: "absent", mark: "·", label: "未參與" };
+  };
+
+  const floors = [];
+  for (let f = maxFloor; f >= 1; f--) floors.push(f);
+
+  return (
+    <div className="hh-matrix" style={{ gridTemplateColumns: `44px repeat(${buildings.length}, 1fr)` }}>
+      <div></div>
+      {buildings.map((b) => (
+        <div key={b} className="hh-col-h">{b}<span>號</span></div>
+      ))}
+      {floors.map((f) => (
+        <React.Fragment key={f}>
+          <div className="hh-row-h">{f}F</div>
+          {buildings.map((b) => {
+            const cell = cellOf(b, f);
+            if (!cell) return <div key={b} className="hh-cell void"></div>;
+            return (
+              <div key={b} className={`hh-cell ${cell.cls}`} title={`${cell.h} — ${cell.label}`}>
+                {cell.mark}
+              </div>
+            );
+          })}
+        </React.Fragment>
+      ))}
+    </div>
+  );
+}
+
 function DrawingScreen({ data, eligible, seed, autoPlay, onBack }) {
   const plan = useMemoD(() => {
     const shuffledHouseholds = window.shuffleWithSeed(eligible, seed);
@@ -141,18 +191,35 @@ function DrawingScreen({ data, eligible, seed, autoPlay, onBack }) {
         </div>
       </div>
 
+      {allDone ? (
+        <div className="panel">
+          <div className="mono" style={{ fontSize: 13, color:"var(--ink-2)", marginBottom: 14 }}>
+            共配對 {plan.pairs.length} 組{plan.waitlist.length > 0 ? ` · 候補 ${plan.waitlist.length} 位` : ""}
+          </div>
+          <ResultMatrix pairs={plan.pairs} waitlist={plan.waitlist} />
+          <div className="legend">
+            <span><b style={{ color:"var(--accent)" }}>12</b> 格內數字=中籤車格號</span>
+            <span><b style={{ color:"var(--warn)" }}>補1</b> 候補順位</span>
+            <span><b style={{ color:"var(--ink-3)" }}>·</b> 未參與</span>
+            <span><i className="sw" style={{ background:"repeating-linear-gradient(45deg, transparent 0 3px, rgba(27,36,33,.18) 3px 6px)" }}></i>無此戶別</span>
+          </div>
+          {plan.unassignedSpots.length > 0 && (
+            <div style={{ marginTop: 18, paddingTop: 14, borderTop: "1px dashed var(--rule-soft)" }}>
+              <div className="mono" style={{ fontSize: 13, color:"var(--warn)", marginBottom: 8 }}>
+                ⚠ 未配對車格 {plan.unassignedSpots.length} 格(無人認領)
+              </div>
+              <div className="chip-list">
+                {plan.unassignedSpots.map((s) => <span key={s} className="chip">#{s}</span>)}
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
       <div className="draw-wrap">
         <div className="draw-stage">
           <div className="draw-now">
             <div className="lbl">— 第 {Math.min(index + 1, plan.picks.length)} / 共 {plan.picks.length} 籤 —</div>
-            {allDone ? (
-              <div>
-                <div className="slot-no" style={{ fontSize: 64, color:"var(--accent)" }}>抽籤完成</div>
-                <div className="mono" style={{ fontSize: 13, color:"var(--ink-2)" }}>
-                  共配對 {plan.pairs.length} 組{plan.waitlist.length > 0 ? ` · 候補 ${plan.waitlist.length} 位` : ""}
-                </div>
-              </div>
-            ) : currentPick ? (
+            {currentPick ? (
               <>
                 <div className="slot-no">
                   {currentPick.type === "spot" ? (
@@ -178,9 +245,7 @@ function DrawingScreen({ data, eligible, seed, autoPlay, onBack }) {
           </div>
 
           <div className="draw-controls">
-            <div className="ticker">
-              {allDone ? "已完成全部抽籤" : `剩餘 ${remaining} 籤`}
-            </div>
+            <div className="ticker">剩餘 {remaining} 籤</div>
           </div>
         </div>
 
@@ -217,24 +282,10 @@ function DrawingScreen({ data, eligible, seed, autoPlay, onBack }) {
               );
             })
           )}
-          {allDone && plan.unassignedSpots.length > 0 && (
-            <>
-              <div style={{ marginTop: 18, fontSize:11, fontFamily:"JetBrains Mono, monospace", color:"var(--ink-3)", letterSpacing:".1em", textTransform:"uppercase", borderTop:"1px dashed var(--rule-soft)", paddingTop: 12 }}>
-                未配對車格
-              </div>
-              {plan.unassignedSpots.map((s, i) => (
-                <div key={`u${i}`} className="log-row empty">
-                  <span className="no">空</span>
-                  <span className="spot">車格 #{s}</span>
-                  <span className="arr">→</span>
-                  <span className="hh">(無人)</span>
-                </div>
-              ))}
-            </>
-          )}
           </div>
         </div>
       </div>
+      )}
 
       <div className="row-actions">
         <div className="left">
