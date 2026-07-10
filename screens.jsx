@@ -129,14 +129,59 @@ function WelcomeScreen({ onImport, error }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Preview
 // ─────────────────────────────────────────────────────────────────────────────
+// 戶別對照矩陣:欄 = 戶號、列 = 樓層(由高到低),格子狀態一眼看出參與情形
+function HouseholdMatrix({ registered, actual }) {
+  const buildings = Object.keys(BUILDING_FLOORS).map(Number);
+  const maxFloor = Math.max(...Object.values(BUILDING_FLOORS).map(([, hi]) => hi));
+  const regSet = new Set(registered);
+  const actSet = new Set(actual);
+
+  // 狀態分類:eligible = 登記∩實到、reg-only = 僅登記、act-only = 到場未登記、absent = 未參與
+  const cellOf = (b, f) => {
+    const [lo, hi] = BUILDING_FLOORS[b];
+    if (f < lo || f > hi) return null; // 該戶不存在 → 留白
+    const h = `${b}號${f}樓`;
+    const reg = regSet.has(h);
+    const act = actSet.has(h);
+    if (reg && act) return { h, cls: "eligible", mark: "", label: "合格" };
+    if (reg) return { h, cls: "reg-only", mark: "", label: "僅登記未到" };
+    if (act) return { h, cls: "act-only", mark: "✕", label: "到場未登記" };
+    return { h, cls: "absent", mark: "·", label: "未參與" };
+  };
+
+  const floors = [];
+  for (let f = maxFloor; f >= 1; f--) floors.push(f);
+
+  return (
+    <div className="hh-matrix" style={{ gridTemplateColumns: `44px repeat(${buildings.length}, 1fr)` }}>
+      <div></div>
+      {buildings.map((b) => (
+        <div key={b} className="hh-col-h">{b}<span>號</span></div>
+      ))}
+      {floors.map((f) => (
+        <React.Fragment key={f}>
+          <div className="hh-row-h">{f}F</div>
+          {buildings.map((b) => {
+            const cell = cellOf(b, f);
+            if (!cell) return <div key={b} className="hh-cell void"></div>;
+            return (
+              <div key={b} className={`hh-cell ${cell.cls}`} title={`${cell.h} — ${cell.label}`}>
+                {cell.mark}
+              </div>
+            );
+          })}
+        </React.Fragment>
+      ))}
+    </div>
+  );
+}
+
 function PreviewScreen({ data, fileName, onBack, onStart, warnings }) {
-  const [tab, setTab] = useState("spots");
+  const [tab, setTab] = useState("households");
   const eligible = useMemo(() => {
     const actSet = new Set(data.actual);
     return data.registered.filter((h) => actSet.has(h));
   }, [data]);
-
-  const eligibleSet = new Set(eligible);
 
   const spotsCount = data.spots.length;
   const eligibleCount = eligible.length;
@@ -203,57 +248,31 @@ function PreviewScreen({ data, fileName, onBack, onStart, warnings }) {
 
       <div className="panel">
         <div className="tabs">
+          <button className={tab==="households"?"active":""} onClick={()=>setTab("households")}>
+            戶別對照 · 合格 {eligibleCount}
+          </button>
           <button className={tab==="spots"?"active":""} onClick={()=>setTab("spots")}>
             車格清單 · {spotsCount}
           </button>
-          <button className={tab==="registered"?"active":""} onClick={()=>setTab("registered")}>
-            登記戶 · {data.registered.length}
-          </button>
-          <button className={tab==="actual"?"active":""} onClick={()=>setTab("actual")}>
-            實到戶 · {data.actual.length}
-          </button>
-          <button className={tab==="eligible"?"active":""} onClick={()=>setTab("eligible")}>
-            合格戶 · {eligibleCount}
-          </button>
         </div>
 
+        {tab === "households" && (
+          <div>
+            {eligibleCount === 0 && <div className="empty-note">尚無合格戶。請檢查登記名單與實到名單是否有交集。</div>}
+            <HouseholdMatrix registered={data.registered} actual={data.actual} />
+            <div className="legend">
+              <span><i className="sw" style={{ background:"var(--ink)" }}></i>合格(登記且實到) {eligibleCount}</span>
+              <span><i className="sw" style={{ border:"1.5px solid var(--ink)", boxSizing:"border-box" }}></i>僅登記未到 {data.registered.length - eligibleCount}</span>
+              <span><b style={{ color:"var(--warn)" }}>✕</b> 到場未登記 {data.actual.length - eligibleCount}</span>
+              <span><b style={{ color:"var(--ink-3)" }}>·</b> 未參與</span>
+              <span><i className="sw" style={{ background:"repeating-linear-gradient(45deg, transparent 0 3px, rgba(27,36,33,.18) 3px 6px)" }}></i>無此戶別</span>
+            </div>
+          </div>
+        )}
         {tab === "spots" && (
           <div className="chip-list">
             {data.spots.length === 0 && <div className="empty-note">沒有車格資料。</div>}
             {data.spots.map((s) => <span key={s} className="chip">#{s}</span>)}
-          </div>
-        )}
-        {tab === "registered" && (
-          <div>
-            <div className="chip-list">
-              {data.registered.map((h) => (
-                <span key={h} className={`chip ${eligibleSet.has(h) ? "eligible" : ""}`}>{h}</span>
-              ))}
-            </div>
-            <div className="legend">
-              <span><i className="sw" style={{ background:"var(--ink)" }}></i>已實到(合格)</span>
-              <span><i className="sw" style={{ background:"var(--bg)", border:"1px solid var(--rule-soft)" }}></i>僅登記</span>
-            </div>
-          </div>
-        )}
-        {tab === "actual" && (
-          <div>
-            <div className="chip-list">
-              {data.actual.map((h) => {
-                const reg = data.registered.includes(h);
-                return <span key={h} className={`chip ${reg ? "eligible" : "muted"}`}>{h}</span>;
-              })}
-            </div>
-            <div className="legend">
-              <span><i className="sw" style={{ background:"var(--ink)" }}></i>已登記(合格)</span>
-              <span><i className="sw" style={{ background:"transparent", border:"1px dashed var(--rule-soft)" }}></i>未登記(不合格)</span>
-            </div>
-          </div>
-        )}
-        {tab === "eligible" && (
-          <div className="chip-list">
-            {eligible.length === 0 && <div className="empty-note">尚無合格戶。請檢查登記名單與實到名單是否有交集。</div>}
-            {eligible.map((h) => <span key={h} className="chip eligible">{h}</span>)}
           </div>
         )}
       </div>
